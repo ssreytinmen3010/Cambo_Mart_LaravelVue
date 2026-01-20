@@ -14,7 +14,7 @@ function showToast() {
   <Head title="Dashboard" />
 
   <AdminLayout title="Dashboard" subtitle="Welcome to Admin dashboard!">
-    <button @click="showToast" class="px-4 py-2 mb-4 bg-blue-600 text-white rounded">Show Toast</button>
+    <!-- <button @click="showToast" class="px-4 py-2 mb-4 bg-blue-600 text-white rounded">Show Toast</button> -->
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       <div class="h-32 p-4 border rounded-lg bg-white shadow">Card 1</div>

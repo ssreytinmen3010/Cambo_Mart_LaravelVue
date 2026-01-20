@@ -1,6 +1,6 @@
 import './bootstrap';
 import '../css/app.css';
-// import './ziggy';
+import './ziggy';
 
 
 
@@ -19,13 +19,17 @@ import * as directives from 'vuetify/directives'
 
 // Icons
 import '@mdi/font/css/materialdesignicons.css'
+import { mdi } from 'vuetify/iconsets/mdi'
 
 const vuetify = createVuetify({
     components,
     directives,
     icons: {
-        defaultSet: 'mdi',
+    defaultSet: 'mdi',
+    sets: {
+        mdi,
     },
+  },
 })
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -34,7 +38,7 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
+        return createApp(App, props)
             .use(plugin)
             .use(ZiggyVue)
             .use(vuetify)

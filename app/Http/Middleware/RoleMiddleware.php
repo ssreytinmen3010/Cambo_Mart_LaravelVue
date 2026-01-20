@@ -21,11 +21,14 @@ class RoleMiddleware
         }
 
         if (Auth::user()->role->name !== $role) {
-            // Optional: redirect user to their dashboard
+            // Redirect unauthorized users to their appropriate dashboard
             if (Auth::user()->role->name === 'admin') {
                 return redirect()->route('admin.dashboard');
-            } else {
+            } elseif (Auth::user()->role->name === 'user') {
                 return redirect()->route('user.dashboard');
+            } else {
+                // Fallback for unknown roles
+                return redirect('/');
             }
         }
 

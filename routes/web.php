@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\User\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,5 +59,36 @@ Route::get('/admin/dashboard', function () {
 Route::get('/user/dashboard', function () {
     return Inertia::render('user/Dashboard');
 })->middleware(['auth', 'verified', 'role:user'])->name('user.dashboard');
+
+Route::get('/admin/users/list', [UserController::class, 'list'])
+    ->middleware(['auth', 'verified', 'role:admin']);
+
+Route::post('/admin/users/list/add', [UserController::class, 'store'])
+    ->middleware(['auth', 'verified', 'role:admin'])->name('admin.users.store');
+
+Route::patch('/admin/users/list/update/{user}', [UserController::class, 'update'])
+    ->middleware(['auth', 'verified', 'role:admin']);
+
+Route::patch('/admin/users/{user}/status', [UserController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified', 'role:admin']);
+
+Route::get('/admin/users', function () {
+    return Inertia::render('Admin/User');
+})->middleware(['auth', 'verified', 'role:admin']);
+
+
+
+
+
+Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
+    Route::get('/users/list', [UserController::class, 'list']);
+    Route::post('/users/list/add', [UserController::class, 'add']);
+    Route::get('/users/list/update/{userId}', [UserController::class, 'edit']);
+    Route::patch('/users/list/update/{userId}', [UserController::class, 'update']);
+    Route::delete('/users/list/{userId}', [UserController::class, 'destroy']);
+    Route::patch('/users/list/{userId}/status', [UserController::class, 'updateStatus']);
+});
+
+
 
 require __DIR__.'/auth.php';
