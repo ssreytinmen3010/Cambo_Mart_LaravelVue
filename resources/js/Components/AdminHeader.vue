@@ -77,7 +77,7 @@
                   <v-icon size="18">mdi-cog-outline</v-icon> Settings
                 </li>
                 <div class="h-px bg-slate-50 my-1"></div>
-                <li class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
+                <li @click="logout" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                   <v-icon size="18">mdi-logout</v-icon> Sign Out
                 </li>
               </ul>
@@ -91,6 +91,8 @@
 
 <script setup>
 import { ref } from "vue";
+import { router } from '@inertiajs/vue3';
+
 // Assuming you have this composable; otherwise replace with a reactive window listener
 const isMobile = ref(false); 
 const open = ref(false);
@@ -99,4 +101,8 @@ defineProps({
   title: { type: String, default: "Dashboard" },
   subtitle: { type: String, default: "" }
 });
+
+const logout = () => {
+  router.post('/logout');
+};
 </script>

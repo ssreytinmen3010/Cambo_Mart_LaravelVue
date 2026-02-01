@@ -24,24 +24,24 @@
           {{ item.title }}
         </p>
 
-        <a
+        <Link
           v-else-if="!item.isHeader"
           :href="item.path"
           :class="[
             'flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group relative',
-            /* ACTIVE: If currentPath matches item path, use green tint */
-            currentPath === item.path 
+            /* Check if the current route matches the item path */
+            isActive(item.path)
               ? 'bg-green-500/10 text-green-400 font-bold' 
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
           ]"
         >
           <div 
-            v-if="currentPath === item.path"
+            v-if="isActive(item.path)"
             class="absolute left-0 top-2 bottom-2 w-1 bg-green-500 rounded-r-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"
           ></div>
 
           <v-icon 
-            :color="currentPath === item.path ? 'green-accent-3' : ''"
+            :color="isActive(item.path) ? 'green-accent-3' : ''"
             :class="[collapsed ? 'mx-auto' : '', 'transition-colors']"
           >
             {{ item.icon }}
@@ -54,7 +54,7 @@
           <div v-if="collapsed" class="absolute left-16 bg-slate-800 text-white text-[11px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity border border-slate-700 whitespace-nowrap z-50">
             {{ item.title }}
           </div>
-        </a>
+        </Link>
       </div>
     </nav>
 
@@ -71,22 +71,30 @@
 </template>
 
 <script setup>
-/**
- * currentPath must match the item.path exactly for the active state to trigger.
- * Example: If you are at /admin/users, the 'Users' item will light up green.
- */
+import { computed } from 'vue';
+import { usePage, Link } from '@inertiajs/vue3';
+
 const props = defineProps({
   collapsed: Boolean,
-  currentPath: { type: String, default: '/' } 
 });
+
+const page = usePage();
 
 const navItems = [
   { title: "Main Menu", isHeader: true },
-  { title: "Dashboard", path: "/", icon: "mdi-view-dashboard-outline" },
+  { title: "Dashboard", path: "/admin/dashboard", icon: "mdi-view-dashboard-outline" },
   { title: "Users", path: "/admin/users", icon: "mdi-account-group-outline" },
-  { title: "Products", path: "/products", icon: "mdi-package-variant-closed" },
+  { title: "Products", path: "/admin/products", icon: "mdi-package-variant-closed" },
   { title: "Orders", path: "/orders", icon: "mdi-tray-full" },
   { title: "System", isHeader: true },
   { title: "Settings", path: "/settings", icon: "mdi-cog-outline" },
 ];
+
+// Get current URL path
+const currentPath = computed(() => page.url);
+
+// Helper function to check active state
+const isActive = (path) => {
+  return currentPath.value === path || currentPath.value.startsWith(path);
+};
 </script>

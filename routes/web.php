@@ -82,7 +82,7 @@ Route::get('/admin/users', function () {
 
 Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::get('/users/list', [UserController::class, 'list']);
-    Route::post('/users/list/add', [UserController::class, 'add']);
+    Route::post('/users/list/add', [UserController::class, 'store']);
     Route::get('/users/list/update/{userId}', [UserController::class, 'edit']);
     Route::patch('/users/list/update/{userId}', [UserController::class, 'update']);
     Route::delete('/users/list/{userId}', [UserController::class, 'destroy']);
