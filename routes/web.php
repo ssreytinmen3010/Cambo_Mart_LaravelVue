@@ -8,6 +8,8 @@ use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\AdminPanel\BrandController;
 use App\Http\Controllers\AdminPanel\CategoryController;
 use App\Http\Controllers\AdminPanel\ProductController;
+use App\Http\Controllers\AdminPanel\PromotionController;
+use App\Http\Controllers\AdminPanel\OrderController;
 use App\Http\Controllers\ImageController;
 use App\Models\User;
 use App\Models\AdminPanel\Product;
@@ -68,6 +70,7 @@ Route::get('/admin/dashboard', function () {
             'products' => Product::count(),
             'categories' => Category::count(),
             'brands' => Brand::count(),
+            'orders' => \App\Models\AdminPanel\Order::count(),
         ]
     ]);
 })->middleware(['auth', 'verified', 'role:admin'])->name('admin.dashboard');
@@ -119,6 +122,16 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::post('/categories', [CategoryController::class, 'store'])->name('admin.categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
+    Route::get('/promotions', [PromotionController::class, 'index'])->name('admin.promotions.index');
+    Route::post('/promotions', [PromotionController::class, 'store'])->name('admin.promotions.store');
+    Route::put('/promotions/{promotion}', [PromotionController::class, 'update'])->name('admin.promotions.update');
+    Route::delete('/promotions/{promotion}', [PromotionController::class, 'destroy'])->name('admin.promotions.destroy');
+
+    Route::get('/orders', [OrderController::class, 'index'])->name('admin.orders.index');
+    Route::put('/orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');
+    Route::post('/orders/bulk-update', [OrderController::class, 'bulkUpdate'])->name('admin.orders.bulk-update');
+    Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('admin.orders.destroy');
 });
 
 

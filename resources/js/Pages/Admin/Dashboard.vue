@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from "@/Layouts/AdminLayout.vue";
-import { Head } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
 import { useToast } from "@/composables/useToast.js";
 
 const props = defineProps({
@@ -19,7 +19,24 @@ function showToast() {
 
   <AdminLayout title="Dashboard" subtitle="Welcome to Admin dashboard!">
     <!-- Summary Stats Grid -->
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <!-- Orders Card (NEW) -->
+      <div class="relative overflow-hidden bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all group">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+          <v-icon size="64" color="emerald">mdi-cart-outline</v-icon>
+        </div>
+        <div class="flex flex-col">
+          <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
+            <v-icon>mdi-cart-outline</v-icon>
+          </div>
+          <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Orders</span>
+          <h3 class="text-3xl font-black text-slate-800">{{ stats.orders }}</h3>
+        </div>
+        <Link :href="route('admin.orders.index')" class="mt-4 flex items-center text-[11px] font-bold text-emerald-600">
+          <v-icon size="14" class="mr-1">mdi-arrow-right</v-icon> Manage orders
+        </Link>
+      </div>
+
       <!-- Users Card -->
       <div class="relative overflow-hidden bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
         <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">

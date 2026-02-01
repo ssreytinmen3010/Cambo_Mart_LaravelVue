@@ -94,7 +94,9 @@ const navItems = [
   { title: "Users", path: "/admin/users", icon: "mdi-account-group-outline" },
   { title: "Products", path: "/admin/products", icon: "mdi-package-variant-closed" },
   { title: "Promotions", path: "/admin/promotions", icon: "mdi-percent" },
-  { title: "Orders", path: "/orders", icon: "mdi-tray-full" },
+  { title: "Orders", path: "/admin/orders", icon: "mdi-tray-full" },
+  {title: "Reviews", path: "/admin/reviews", icon: "mdi-star-outline" },
+  { title: "Reports", path: "/admin/reports", icon: "mdi-chart-box-outline" },
   { title: "System", isHeader: true },
   { title: "Settings", path: "/settings", icon: "mdi-cog-outline" },
 ];
