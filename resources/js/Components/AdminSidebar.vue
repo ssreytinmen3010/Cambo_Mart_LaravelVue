@@ -8,9 +8,17 @@
   >
     <div class="h-20 flex items-center px-5 mb-4">
       <div class="flex items-center gap-3">
-        <div class="min-w-[40px] h-10 bg-gradient-to-tr from-green-600 to-emerald-400 flex items-center justify-center rounded-xl shadow-lg shadow-green-500/20">
-          <v-icon color="white" size="24">mdi-storefront</v-icon>
-        </div>
+<div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-tr from-slate-100 to-white rounded-2xl shadow-xl  border border-white">
+  
+  <img 
+    src="@img/Logo.png" 
+    alt="CamboMart Logo" 
+    class="w-18 h-18 min-w-[72px] z-10 object-contain drop-shadow-xl transform hover:scale-110 transition-transform duration-300" 
+  />
+
+  <div class="absolute inset-0 bg-white/40 blur-xl rounded-full"></div>
+  
+</div>
         <div v-if="!collapsed" class="overflow-hidden whitespace-nowrap">
           <h1 class="font-black text-xl tracking-tight text-white">Cambo<span class="text-green-400">Mart</span></h1>
         </div>
@@ -85,6 +93,7 @@ const navItems = [
   { title: "Dashboard", path: "/admin/dashboard", icon: "mdi-view-dashboard-outline" },
   { title: "Users", path: "/admin/users", icon: "mdi-account-group-outline" },
   { title: "Products", path: "/admin/products", icon: "mdi-package-variant-closed" },
+  { title: "Promotions", path: "/admin/promotions", icon: "mdi-percent" },
   { title: "Orders", path: "/orders", icon: "mdi-tray-full" },
   { title: "System", isHeader: true },
   { title: "Settings", path: "/settings", icon: "mdi-cog-outline" },

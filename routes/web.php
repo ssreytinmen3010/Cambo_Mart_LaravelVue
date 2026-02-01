@@ -5,6 +5,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\AdminPanel\BrandController;
+use App\Http\Controllers\AdminPanel\CategoryController;
+use App\Http\Controllers\AdminPanel\ProductController;
+use App\Http\Controllers\ImageController;
+use App\Models\User;
+use App\Models\AdminPanel\Product;
+use App\Models\AdminPanel\Category;
+use App\Models\AdminPanel\Brand;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,10 +58,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/upload-image', [ImageController::class, 'upload'])->name('images.upload');
 });
 
 Route::get('/admin/dashboard', function () {
-    return Inertia::render('Admin/Dashboard');
+    return Inertia::render('Admin/Dashboard', [
+        'stats' => [
+            'users' => User::count(),
+            'products' => Product::count(),
+            'categories' => Category::count(),
+            'brands' => Brand::count(),
+        ]
+    ]);
 })->middleware(['auth', 'verified', 'role:admin'])->name('admin.dashboard');
 
 Route::get('/user/dashboard', function () {
@@ -78,7 +94,8 @@ Route::get('/admin/users', function () {
 
 
 
-
+ Route::post('upload-image', [ImageController::class, 'upload'])
+        ->name('image.upload');
 
 Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::get('/users/list', [UserController::class, 'list']);
@@ -87,6 +104,21 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::patch('/users/list/update/{userId}', [UserController::class, 'update']);
     Route::delete('/users/list/{userId}', [UserController::class, 'destroy']);
     Route::patch('/users/list/{userId}/status', [UserController::class, 'updateStatus']);
+
+    Route::get('/products', [ProductController::class, 'index'])->name('admin.products.index');
+    Route::post('/products', [ProductController::class, 'store'])->name('admin.products.store');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
+
+    Route::get('/brands', [BrandController::class, 'index'])->name('admin.brands.index');
+    Route::post('/brands', [BrandController::class, 'store'])->name('admin.brands.store');
+    Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('admin.brands.update');
+    Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('admin.brands.destroy');
+
+    Route::get('/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
 });
 
 
