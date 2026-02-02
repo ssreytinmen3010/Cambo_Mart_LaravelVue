@@ -10,11 +10,13 @@ use App\Http\Controllers\AdminPanel\CategoryController;
 use App\Http\Controllers\AdminPanel\ProductController;
 use App\Http\Controllers\AdminPanel\PromotionController;
 use App\Http\Controllers\AdminPanel\OrderController;
+use App\Http\Controllers\AdminPanel\ReviewController;
 use App\Http\Controllers\ImageController;
 use App\Models\User;
 use App\Models\AdminPanel\Product;
 use App\Models\AdminPanel\Category;
 use App\Models\AdminPanel\Brand;
+use App\Http\Controllers\AdminPanel\SettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,9 +93,8 @@ Route::patch('/admin/users/list/update/{user}', [UserController::class, 'update'
 Route::patch('/admin/users/{user}/status', [UserController::class, 'updateStatus'])
     ->middleware(['auth', 'verified', 'role:admin']);
 
-Route::get('/admin/users', function () {
-    return Inertia::render('Admin/User');
-})->middleware(['auth', 'verified', 'role:admin']);
+Route::get('/admin/users', [UserController::class, 'list'])
+    ->middleware(['auth', 'verified', 'role:admin']);
 
 
 
@@ -132,6 +133,19 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');
     Route::post('/orders/bulk-update', [OrderController::class, 'bulkUpdate'])->name('admin.orders.bulk-update');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('admin.orders.destroy');
+
+    Route::get('/reviews', [ReviewController::class, 'index'])->name('admin.reviews.index');
+    Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('admin.reviews.update');
+    Route::post('/reviews/bulk-update', [ReviewController::class, 'bulkUpdate'])->name('admin.reviews.bulk-update');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('admin.reviews.destroy');
+
+    Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings.index');
+    Route::put('/settings/profile', [SettingController::class, 'updateProfile'])->name('admin.settings.update-profile');
+    Route::put('/settings/password', [SettingController::class, 'updatePassword'])->name('admin.settings.update-password');
+    Route::put('/settings/system', [SettingController::class, 'updateSystem'])->name('admin.settings.update-system');
+    
+
+
 });
 
 

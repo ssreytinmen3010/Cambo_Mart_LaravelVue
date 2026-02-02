@@ -42,6 +42,7 @@ class BrandController extends Controller
             'last_page' => $brandsPaginator->lastPage(),
             'per_page' => $brandsPaginator->perPage(),
             'total' => $brandsPaginator->total(),
+            'links' => $brandsPaginator->toArray()['links'],
         ];
 
         return Inertia::render('Admin/Brand/Index', [

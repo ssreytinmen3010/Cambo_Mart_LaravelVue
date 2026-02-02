@@ -63,7 +63,7 @@ class PromotionController extends Controller
             'last_page' => $promosPaginator->lastPage(),
             'per_page' => $promosPaginator->perPage(),
             'total' => $promosPaginator->total(),
-            // 'links' => $promosPaginator->linkCollection()->toArray(),
+            'links' => $promosPaginator->linkCollection()->toArray(),
         ];
 
         return Inertia::render('Admin/Promotion/Index', [

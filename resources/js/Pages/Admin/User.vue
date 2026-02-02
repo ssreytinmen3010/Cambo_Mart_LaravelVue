@@ -1,11 +1,21 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, computed } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import { router, Link } from "@inertiajs/vue3";
 import axios from "axios";
 
-// Users and roles
-const users = ref([]);
-const roles = ref([]);
+const props = defineProps({
+  users: {
+    type: Object,
+    default: () => ({ data: [], links: [] })
+  },
+  roles: {
+    type: Array,
+    default: () => []
+  }
+});
+
+// State
 const searchName = ref("");
 const filterRole = ref("");
 
@@ -22,32 +32,9 @@ const currentUser = ref({
   status: "Active"
 });
 
-// Fetch users
-async function fetchUsers() {
-  try {
-    const resUsers = await axios.get("/admin/users/list");
-    users.value = resUsers.data.map(u => ({
-      ...u,
-      status: u.status ? u.status.toLowerCase() : 'active',
-      showMenu: false
-    }));
-    // Get unique roles with their actual IDs from the database
-    const roleMap = new Map();
-    users.value.forEach(u => {
-      if (u.role) {
-        roleMap.set(u.role.id, { id: u.role.id, name: u.role.name });
-      }
-    });
-    roles.value = Array.from(roleMap.values());
-  } catch (e) {
-    console.error("Failed to fetch users", e);
-  }
-}
-
-onMounted(fetchUsers);
-
 const filteredUsers = computed(() => {
-  return users.value.filter(user => {
+  if (!props.users?.data) return [];
+  return props.users.data.filter(user => {
     const matchesName = user.name.toLowerCase().includes(searchName.value.toLowerCase());
     const matchesRole = filterRole.value ? user.role?.name === filterRole.value : true;
     return matchesName && matchesRole;
@@ -61,11 +48,11 @@ function resetPassword(userId) {
 
 async function toggleStatus(user) {
   try {
-    const newStatus = user.status === "active" ? "Inactive" : "Active";
-    const response = await axios.patch(`/admin/users/${user.id}/status`, {
+    const newStatus = user.status === "Active" || user.status === "active" ? "Inactive" : "Active";
+    await axios.patch(`/admin/users/${user.id}/status`, {
       status: newStatus
     });
-    if (response.data.message) user.status = newStatus.toLowerCase();
+    router.reload();
   } catch (e) {
     console.error(e);
     alert("Failed to update status");
@@ -86,7 +73,7 @@ function editUser(user) {
     email: user.email,
     phone: user.phone,
     role_id: user.role?.id || "",
-    status: user.status === "active" ? "Active" : "Inactive"
+    status: user.status || "Active"
   };
   showModal.value = true;
 }
@@ -103,7 +90,7 @@ async function saveUser() {
       alert("User added successfully");
     }
     showModal.value = false;
-    fetchUsers();
+    router.reload();
   } catch (e) {
     console.error("Save error:", e);
     if (e.response && e.response.data && e.response.data.errors) {
@@ -159,7 +146,7 @@ async function saveUser() {
       class="w-full pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-100 rounded-full text-xs font-medium text-slate-600 focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white outline-none appearance-none cursor-pointer transition-all"
     >
       <option value="">All Roles</option>
-      <option v-for="role in roles" :key="role.id" :value="role.name">{{ role.name }}</option>
+      <option v-for="role in props.roles" :key="role.id" :value="role.name">{{ role.name }}</option>
     </select>
     <!-- <v-icon 
       class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" 
@@ -183,6 +170,14 @@ async function saveUser() {
       </tr>
     </thead>
         <tbody class="divide-y divide-slate-50">
+          <tr v-if="filteredUsers.length === 0">
+            <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+              <div class="flex flex-col items-center gap-2">
+                <v-icon size="48" class="text-slate-300">mdi-account-group-outline</v-icon>
+                <p class="text-sm font-medium">No users found</p>
+              </div>
+            </td>
+          </tr>
           <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-slate-50/50 transition-colors">
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
@@ -199,7 +194,7 @@ async function saveUser() {
             <td class="px-6 py-4 text-sm text-slate-600 font-medium">{{ user.role?.name }}</td>
             <td class="px-6 py-4 text-sm text-slate-400">{{ new Date(user.created_at).toLocaleDateString() }}</td>
             <td class="px-6 py-4">
-              <span :class="user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
+              <span :class="(user.status === 'active' || user.status === 'Active') ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
                 {{ user.status }}
               </span>
             </td>
@@ -208,14 +203,18 @@ async function saveUser() {
                   <button @click="editUser(user)" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                     <v-icon size="18">mdi-pencil</v-icon>
                   </button>
-                  <button @click="toggleStatus(user)" :class="user.status === 'active' ? 'text-rose-500 hover:bg-rose-50' : 'text-emerald-500 hover:bg-emerald-50'" class="p-2 rounded-lg transition-colors">
-                    <v-icon size="18">{{ user.status === 'active' ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
+                  <button @click="toggleStatus(user)" :class="(user.status === 'active' || user.status === 'Active') ? 'text-rose-500 hover:bg-rose-50' : 'text-emerald-500 hover:bg-emerald-50'" class="p-2 rounded-lg transition-colors">
+                    <v-icon size="18">{{ (user.status === 'active' || user.status === 'Active') ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
                   </button>
                </div>
             </td>
           </tr>
         </tbody>
       </table>
+      <!-- Pagination Controls -->
+      <div v-if="users?.links" class="p-3 border-t border-slate-100 flex justify-center gap-1">
+         <Link v-for="(link, i) in users.links" :key="i" :href="link.url || '#'" v-html="link.label" class="px-3 py-1 text-xs rounded" :class="link.active ? 'bg-green-500 text-white' : 'text-gray-500 hover:bg-gray-100'" />
+      </div>
     </div>
 
     <Transition name="modal-fade">
@@ -249,6 +248,7 @@ async function saveUser() {
               <div class="space-y-1">
                 <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Role</label>
                 <select v-model="currentUser.role_id" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none cursor-pointer">
+                  <option value="">Select Role</option>
                   <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
                 </select>
               </div>

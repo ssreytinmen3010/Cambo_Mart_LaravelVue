@@ -23,8 +23,16 @@ class UserController extends Controller
     }
     
         public function list() {
-            $users = \App\Models\User::with('role')->get();
-            return response()->json($users);
+            $users = \App\Models\User::with('role')
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+            
+            $roles = \App\Models\Role::all();
+            
+            return inertia('Admin/User', [
+                'users' => $users,
+                'roles' => $roles
+            ]);
         }
     
         public function updateStatus(Request $request, $userId) {
@@ -35,6 +43,7 @@ class UserController extends Controller
             $user = \App\Models\User::findOrFail($userId);
             $user->status = $request->status;
             $user->save();
+
     
             return response()->json(['message' => 'User status updated successfully']);
         }
@@ -47,6 +56,7 @@ class UserController extends Controller
                 'password' => 'required|string|min:6',
                 'role_id' => 'required|exists:roles,id',
                 'status' => 'required|in:Active,Inactive'
+
             ]);
 
             // Check phone uniqueness manually if phone is provided
@@ -66,7 +76,11 @@ class UserController extends Controller
                 'phone' => $validated['phone'] ?: null, // Ensure null if empty
                 'password' => bcrypt($validated['password']),
                 'role_id' => $validated['role_id'],
-                'status' => $validated['status']
+                'status' => $validated['status'],
+                
+                
+                
+
             ]);
 
             return response()->json([

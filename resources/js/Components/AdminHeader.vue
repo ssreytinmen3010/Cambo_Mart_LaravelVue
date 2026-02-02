@@ -41,12 +41,13 @@
               open ? 'border-emerald-500 bg-emerald-50' : 'border-transparent hover:bg-slate-50'
             ]"
           >
-            <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm shadow-emerald-200">
-              AD
+            <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm shadow-emerald-200 overflow-hidden">
+              <img v-if="authUser.image && authUser.image !== 'null'" :src="authUser.image" class="w-full h-full object-cover">
+              <span v-else>{{ userInitials }}</span>
             </div>
             
             <div class="hidden md:flex flex-col items-start leading-none text-left">
-              <span class="text-sm font-semibold text-slate-700">Admin User</span>
+              <span class="text-sm font-semibold text-slate-700">{{ authUser.name || 'Admin User' }}</span>
               <span class="text-[10px] text-emerald-600 font-bold uppercase">Pro Plan</span>
             </div>
             
@@ -66,14 +67,14 @@
             <div v-if="open" class="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 py-2 z-50">
               <div class="px-4 py-3 border-b border-slate-50 mb-1">
                 <p class="text-xs text-slate-400 font-medium">Signed in as</p>
-                <p class="text-sm font-bold text-slate-700 truncate">admin@cambomart.com</p>
+                <p class="text-sm font-bold text-slate-700 truncate">{{ authUser.email || 'admin@cambomart.com' }}</p>
               </div>
               
               <ul class="px-2 space-y-0.5">
-                <li class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer transition-colors">
+                <li @click="goToProfile" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer transition-colors">
                   <v-icon size="18">mdi-account-circle-outline</v-icon> Profile
                 </li>
-                <li class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer transition-colors">
+                <li @click="goToSettings" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer transition-colors">
                   <v-icon size="18">mdi-cog-outline</v-icon> Settings
                 </li>
                 <div class="h-px bg-slate-50 my-1"></div>
@@ -90,10 +91,9 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { router } from '@inertiajs/vue3';
+import { ref, computed } from "vue";
+import { router, usePage } from '@inertiajs/vue3';
 
-// Assuming you have this composable; otherwise replace with a reactive window listener
 const isMobile = ref(false); 
 const open = ref(false);
 
@@ -102,7 +102,24 @@ defineProps({
   subtitle: { type: String, default: "" }
 });
 
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user || {});
+const userInitials = computed(() => {
+  const name = authUser.value.name || 'Admin';
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+});
+
 const logout = () => {
   router.post('/logout');
+};
+
+const goToProfile = () => {
+  router.visit('/admin/settings');
+  open.value = false;
+};
+
+const goToSettings = () => {
+  router.visit('/admin/settings');
+  open.value = false;
 };
 </script>

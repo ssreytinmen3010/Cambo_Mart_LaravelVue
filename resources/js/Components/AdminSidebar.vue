@@ -8,24 +8,23 @@
   >
     <div class="h-20 flex items-center px-5 mb-4">
       <div class="flex items-center gap-3">
-<div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-tr from-slate-100 to-white rounded-2xl shadow-xl  border border-white">
-  
-  <img 
-    src="@img/Logo.png" 
-    alt="CamboMart Logo" 
-    class="w-18 h-18 min-w-[72px] z-10 object-contain drop-shadow-xl transform hover:scale-110 transition-transform duration-300" 
-  />
-
-  <div class="absolute inset-0 bg-white/40 blur-xl rounded-full"></div>
-  
-</div>
+        <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-tr from-slate-100 to-white rounded-2xl shadow-xl border border-white">
+          <img 
+            :src="storeLogo || '@img/Logo.png'" 
+            :alt="storeName + ' Logo'" 
+            class="w-18 h-18 min-w-[72px] z-10 object-contain drop-shadow-xl transform hover:scale-110 transition-transform duration-300" 
+          />
+          <div class="absolute inset-0 bg-white/40 blur-xl rounded-full"></div>
+        </div>
         <div v-if="!collapsed" class="overflow-hidden whitespace-nowrap">
-          <h1 class="font-black text-xl tracking-tight text-white">Cambo<span class="text-green-400">Mart</span></h1>
+          <h1 class="font-black text-xl tracking-tight text-white">
+            {{ storeNameParts.first }}<span class="text-green-400">{{ storeNameParts.second }}</span>
+          </h1>
         </div>
       </div>
     </div>
 
-    <nav class="flex-1 px-3 space-y-1">
+    <nav class="flex-1 px-3 space-y-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
       <div v-for="item in navItems" :key="item.path">
         
         <p v-if="!collapsed && item.isHeader" class="text-[11px] font-bold text-slate-500 px-3 mt-6 mb-2 uppercase tracking-wider">
@@ -87,6 +86,19 @@ const props = defineProps({
 });
 
 const page = usePage();
+const settings = computed(() => page.props.appSettings || {});
+const storeName = computed(() => settings.value.store_name || 'CamboMart');
+const storeLogo = computed(() => settings.value.logo);
+
+// Split store name for styling (e.g., "CamboMart" -> "Cambo" + "Mart")
+const storeNameParts = computed(() => {
+  const name = storeName.value;
+  const mid = Math.ceil(name.length / 2);
+  return {
+    first: name.substring(0, mid),
+    second: name.substring(mid)
+  };
+});
 
 const navItems = [
   { title: "Main Menu", isHeader: true },
@@ -95,10 +107,10 @@ const navItems = [
   { title: "Products", path: "/admin/products", icon: "mdi-package-variant-closed" },
   { title: "Promotions", path: "/admin/promotions", icon: "mdi-percent" },
   { title: "Orders", path: "/admin/orders", icon: "mdi-tray-full" },
-  {title: "Reviews", path: "/admin/reviews", icon: "mdi-star-outline" },
+  { title: "Reviews", path: "/admin/reviews", icon: "mdi-star-outline" },
   { title: "Reports", path: "/admin/reports", icon: "mdi-chart-box-outline" },
   { title: "System", isHeader: true },
-  { title: "Settings", path: "/settings", icon: "mdi-cog-outline" },
+  { title: "Settings", path: "/admin/settings", icon: "mdi-cog-outline" },
 ];
 
 // Get current URL path

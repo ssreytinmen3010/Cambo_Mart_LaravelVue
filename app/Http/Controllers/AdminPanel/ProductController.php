@@ -58,6 +58,7 @@ class ProductController extends Controller
             'last_page' => $productsPaginator->lastPage(),
             'per_page' => $productsPaginator->perPage(),
             'total' => $productsPaginator->total(),
+            'links' => $productsPaginator->toArray()['links'],
         ];
 
         return Inertia::render('Admin/Product/Index', [

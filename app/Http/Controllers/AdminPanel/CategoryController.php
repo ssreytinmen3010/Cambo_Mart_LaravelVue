@@ -43,6 +43,7 @@ class CategoryController extends Controller
             'last_page' => $categoriesPaginator->lastPage(),
             'per_page' => $categoriesPaginator->perPage(),
             'total' => $categoriesPaginator->total(),
+            'links' => $categoriesPaginator->toArray()['links'],
         ];
 
         return Inertia::render('Admin/Category/Index', [

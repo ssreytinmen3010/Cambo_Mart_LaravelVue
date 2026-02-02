@@ -4,7 +4,16 @@ import { Head, Link } from "@inertiajs/vue3";
 import { useToast } from "@/composables/useToast.js";
 
 const props = defineProps({
-  stats: Object
+  stats: {
+    type: Object,
+    default: () => ({
+      orders: 0,
+      users: 0,
+      products: 0,
+      categories: 0,
+      brands: 0
+    })
+  }
 });
 
 const { toasts, toast, dismiss } = useToast();

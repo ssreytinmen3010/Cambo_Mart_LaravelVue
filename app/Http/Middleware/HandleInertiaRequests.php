@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Setting;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -29,11 +30,26 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        try {
+            $appSettings = [
+                'store_name' => Setting::get('store_name', config('app.name', 'CamboMart')),
+                'logo' => Setting::get('logo'),
+                'currency' => Setting::get('currency', 'USD'),
+            ];
+        } catch (\Exception $e) {
+            $appSettings = [
+                'store_name' => config('app.name', 'CamboMart'),
+                'logo' => null,
+                'currency' => 'USD',
+            ];
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
             ],
+            'appSettings' => $appSettings,
         ];
     }
 }
