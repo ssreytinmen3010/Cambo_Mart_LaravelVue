@@ -113,11 +113,22 @@ const navItems = [
   { title: "Settings", path: "/admin/settings", icon: "mdi-cog-outline" },
 ];
 
+
+
 // Get current URL path
 const currentPath = computed(() => page.url);
 
 // Helper function to check active state
 const isActive = (path) => {
+  // Special handling for Products menu item
+  // It should be active for /admin/products, /admin/brands, and /admin/categories
+  if (path === '/admin/products') {
+    return currentPath.value === '/admin/products' || 
+           currentPath.value.startsWith('/admin/products') ||
+           currentPath.value.startsWith('/admin/brands') ||
+           currentPath.value.startsWith('/admin/categories');
+  }
+  
   return currentPath.value === path || currentPath.value.startsWith(path);
 };
 </script>
