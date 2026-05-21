@@ -33,6 +33,8 @@ class ProductController extends Controller
 
         // Manual transformation structure matching your BrandController
         $productsPaginator = $query->latest()->paginate(10);
+        $paginatorArray = $productsPaginator->toArray();
+
         $productsData = collect($productsPaginator->items())->map(function ($product) {
             return [
                 'id' => $product->id,
@@ -45,7 +47,9 @@ class ProductController extends Controller
                 'brand_id' => $product->brand_id,
                 'category' => $product->category ? $product->category->name : 'N/A',
                 'brand' => $product->brand ? $product->brand->name : 'N/A',
+                'description' => $product->description,
                 'status' => $product->status,
+                'status_stock' => $product->status_stock,
                 'is_active' => $product->getAttributes()['status'] == 1,
                 'created_at' => $product->created_at->format('Y-m-d H:i'),
                 'updated_at' => $product->updated_at->format('Y-m-d H:i'),
@@ -58,13 +62,17 @@ class ProductController extends Controller
             'last_page' => $productsPaginator->lastPage(),
             'per_page' => $productsPaginator->perPage(),
             'total' => $productsPaginator->total(),
-            'links' => $productsPaginator->toArray()['links'],
+            'links' => $paginatorArray['links'],
         ];
 
         return Inertia::render('Admin/Product/Index', [
             'products' => $products,
-            'categories' => Category::select('id', 'name')->get(),
-            'brands' => Brand::select('id', 'name')->get(),
+            'categories' => Category::where('status', 1)->select('id', 'name', 'brand_id')->get(),
+            'brands' => Brand::where('status', 1)->select('id', 'name')->get(),
+            'statusStocks' => [
+                ['id' => Product::STATUS_SALE, 'name' => Product::STATUS_SALE, 'label' => 'Sale'],
+                ['id' => Product::STATUS_SALE_OUT, 'name' => Product::STATUS_SALE_OUT, 'label' => 'Sale Out']
+            ],
             'filters' => $request->only(['search', 'from_date', 'to_date']),
         ]);
     }
@@ -72,8 +80,8 @@ class ProductController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Products/Create', [
-            'brands' => Brand::select('id', 'name')->get(),
-            'categories' => Category::select('id', 'name')->get(),
+            'brands' => Brand::where('status', 1)->select('id', 'name')->get(),
+            'categories' => Category::where('status', 1)->select('id', 'name')->get(),
         ]);
     }
 
@@ -89,6 +97,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|string',
             'status' => 'boolean',
+            'status_stock' => 'required|in:' . Product::STATUS_SALE . ',' . Product::STATUS_SALE_OUT,
         ]);
 
         Product::create([
@@ -101,6 +110,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'image' => $request->image,
             'status' => $request->status ? 1 : 0,
+            'status_stock' => $request->status_stock,
         ]);
 
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
@@ -121,8 +131,8 @@ class ProductController extends Controller
                 'image' => $product->image,
                 'is_active' => $product->getAttributes()['status'] == 1,
             ],
-            'brands' => Brand::select('id', 'name')->get(),
-            'categories' => Category::select('id', 'name')->get(),
+            'brands' => Brand::where('status', 1)->select('id', 'name')->get(),
+            'categories' => Category::where('status', 1)->select('id', 'name')->get(),
         ]);
     }
 
@@ -138,6 +148,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'image' => 'nullable|string',
             'status' => 'boolean',
+            'status_stock' => 'required|in:' . Product::STATUS_SALE . ',' . Product::STATUS_SALE_OUT,
         ]);
 
         // Delete old image if a new one is uploaded
@@ -156,6 +167,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'image' => $request->image,
             'status' => $request->status ? 1 : 0,
+            'status_stock' => $request->status_stock,
         ]);
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');

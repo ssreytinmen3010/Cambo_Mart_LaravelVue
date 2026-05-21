@@ -27,6 +27,10 @@ const passwordForm = useForm({
 const systemForm = useForm({
   store_name: props.settings?.store_name || "Cambo_Mart",
   currency: props.settings?.currency || "USD",
+  address: props.settings?.address || "Phnom Penh, Cambodia",
+  phone: props.settings?.phone || "+855 12 345 678",
+  map_lat: props.settings?.map_lat || "11.5564",
+  map_long: props.settings?.map_long || "104.9282",
   logo: null,
 });
 
@@ -342,6 +346,64 @@ function updateSystemSettings() {
                    <v-icon size="12">mdi-information</v-icon>
                    Currently supporting USD only
                  </p>
+              </div>
+
+              <!-- Location Fields -->
+              <div class="space-y-2 md:col-span-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-map-marker</v-icon>
+                   Store Address
+                 </label>
+                 <textarea v-model="systemForm.address" rows="3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="Enter store physical address"></textarea>
+                 <div v-if="systemForm.errors.address" class="text-rose-500 text-xs font-bold">{{ systemForm.errors.address }}</div>
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-phone</v-icon>
+                   Store Phone
+                 </label>
+                 <input v-model="systemForm.phone" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="+855 ...">
+                 <div v-if="systemForm.errors.phone" class="text-rose-500 text-xs font-bold">{{ systemForm.errors.phone }}</div>
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-map-marker-radius</v-icon>
+                   Live Map Preview
+                 </label>
+                 <div class="w-full h-48 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden relative group">
+                    <iframe 
+                      width="100%" 
+                      height="100%" 
+                      frameborder="0" 
+                      scrolling="no" 
+                      marginheight="0" 
+                      marginwidth="0" 
+                      :src="`https://maps.google.com/maps?q=${systemForm.map_lat},${systemForm.map_long}&hl=es;z=14&output=embed`"
+                    ></iframe>
+                    <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                       <span class="text-white text-xs font-bold bg-slate-900/60 px-3 py-1.5 rounded-full backdrop-blur-sm">Live Location Preview</span>
+                    </div>
+                 </div>
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-latitude</v-icon>
+                   Map Latitude
+                 </label>
+                 <input v-model="systemForm.map_lat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="11.5564">
+                 <div v-if="systemForm.errors.map_lat" class="text-rose-500 text-xs font-bold">{{ systemForm.errors.map_lat }}</div>
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-longitude</v-icon>
+                   Map Longitude
+                 </label>
+                 <input v-model="systemForm.map_long" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="104.9282">
+                 <div v-if="systemForm.errors.map_long" class="text-rose-500 text-xs font-bold">{{ systemForm.errors.map_long }}</div>
               </div>
            </div>
 

@@ -9,6 +9,9 @@ class Product extends Model
 {
     use HasFactory;
 
+    const STATUS_SALE = 'Sale';
+    const STATUS_SALE_OUT = 'Sale Out';
+
     protected $fillable = [
         'name',
         'product_code',
@@ -19,7 +22,23 @@ class Product extends Model
         'brand_id',
         'image',
         'status',
+        'status_stock',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($product) {
+            // Force status_stock based on stock count
+            $stock = (int)$product->stock;
+            if ($stock <= 0) {
+                $product->status_stock = self::STATUS_SALE_OUT;
+            } else {
+                $product->status_stock = self::STATUS_SALE;
+            }
+        });
+    }
 
     public function getStatusAttribute($value)
     {

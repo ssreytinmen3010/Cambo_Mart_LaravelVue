@@ -14,8 +14,8 @@ const from_date = ref(props.filters?.from_date || "");
 const to_date = ref(props.filters?.to_date || "");
 const statusFilter = ref(props.filters?.status || "");
 
-// For expanding rows (optional feature) or showing details modal
-const expandedOrderId = ref(null); 
+const showViewModal = ref(false);
+const viewOrder = ref(null);
 
 const filteredOrders = computed(() => props.orders.data);
 
@@ -25,8 +25,9 @@ watch([search, from_date, to_date, statusFilter], ([newSearch, newFrom, newTo, n
   }, { preserveState: true, replace: true });
 });
 
-function toggleItems(id) {
-  expandedOrderId.value = expandedOrderId.value === id ? null : id;
+function openViewModal(order) {
+  viewOrder.value = order;
+  showViewModal.value = true;
 }
 
 function updateStatus(order, type, newStatus) {
@@ -35,6 +36,14 @@ function updateStatus(order, type, newStatus) {
   router.put(route('admin.orders.update', order.id), {
      order_status: type === 'Order' ? newStatus : order.order_status,
      payment_status: type === 'Payment' ? newStatus : order.payment_status
+  }, {
+    onSuccess: () => {
+      if (viewOrder.value && viewOrder.value.id === order.id) {
+        // Find the updated order in props and sync viewOrder
+        const updated = props.orders.data.find(o => o.id === order.id);
+        if (updated) viewOrder.value = updated;
+      }
+    }
   });
 }
 
@@ -99,91 +108,204 @@ function deleteItem(id) {
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-50">
-          <template v-for="o in filteredOrders" :key="o.id">
-            <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer" @click="toggleItems(o.id)">
-              <td class="px-6 py-4">
-                 <div class="text-sm font-black text-slate-800">#{{ o.order_number }}</div>
-              </td>
-              <td class="px-6 py-4 text-xs font-bold text-slate-600">{{ o.customer_name }}</td>
-              <td class="px-6 py-4">
-                 <div v-if="o.promotion_code !== 'None'" class="flex flex-col gap-0.5">
-                    <span class="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-black border border-green-100 uppercase w-fit">{{ o.promotion_code }}</span>
-                    <span class="text-[9px] text-slate-400 font-bold ml-1">{{ o.promotion_description }}</span>
-                 </div>
-                 <span v-else class="text-[10px] font-bold text-slate-400 italic">None</span>
-              </td>
-              <td class="px-6 py-4 text-center">
-                 <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{{ o.items.length }} Items</span>
-              </td>
-              <td class="px-6 py-4 text-center">
-                 <div class="text-sm font-black text-emerald-600">${{ o.total_amount }}</div>
-                 <div v-if="o.discount > 0" class="text-[9px] text-rose-400 font-bold mt-0.5">-${{ o.discount }} save</div>
-              </td>
-              
-              <!-- Status Dropdown (Mini) -->
-              <td class="px-6 py-4 text-center">
-                 <div class="relative group inline-block">
-                    <span :class="`bg-${o.status_color}-100 text-${o.status_color}-700`" class="px-3 py-1 rounded-full text-[10px] font-black uppercase cursor-pointer">{{ o.order_status }}</span>
-                    <!-- Hover Menu -->
-                    <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 hidden group-hover:block bg-white border border-slate-100 shadow-xl rounded-lg z-50 p-1 min-w-[100px]">
-                        <div v-for="s in ['PENDING','COMPLETED','CANCELLED']" :key="s" @click.stop="updateStatus(o, 'Order', s)" class="px-3 py-1.5 text-[10px] font-bold hover:bg-slate-50 rounded cursor-pointer text-slate-600">{{ s }}</div>
-                    </div>
-                 </div>
-              </td>
-
-              <!-- Payment Status -->
-              <td class="px-6 py-4 text-center">
-                 <div class="relative group inline-block">
-                    <span :class="`bg-${o.payment_color}-100 text-${o.payment_color}-700`" class="px-3 py-1 rounded-full text-[10px] font-black uppercase cursor-pointer">{{ o.payment_status }}</span>
-                     <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 hidden group-hover:block bg-white border border-slate-100 shadow-xl rounded-lg z-50 p-1 min-w-[100px]">
-                        <div v-for="s in ['PENDING','PAID','REFUNDED']" :key="s" @click.stop="updateStatus(o, 'Payment', s)" class="px-3 py-1.5 text-[10px] font-bold hover:bg-slate-50 rounded cursor-pointer text-slate-600">{{ s }}</div>
-                    </div>
-                 </div>
-              </td>
-
-              <td class="px-6 py-4 text-[11px] text-slate-400 font-mono">{{ o.created_at }}</td>
-              <td class="px-6 py-4 text-right">
-                  <button @click.stop="deleteItem(o.id)" class="text-slate-300 hover:text-rose-500 transition-colors"><v-icon size="18">mdi-delete</v-icon></button>
-              </td>
-            </tr>
+          <tr v-for="o in filteredOrders" :key="o.id" class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-4">
+              <span class="text-xs font-black text-slate-800">#{{ o.order_number }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold border border-emerald-100 overflow-hidden shrink-0 shadow-sm">
+                  <img v-if="o.customer_image" :src="o.customer_image" class="w-full h-full object-cover">
+                  <span v-else>{{ o.customer_name.charAt(0) }}</span>
+                </div>
+                <span class="text-xs font-bold text-slate-800 tracking-tight">{{ o.customer_name }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+               <div v-if="o.promotion_code !== 'None'" class="flex flex-col gap-0.5">
+                  <span class="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-black border border-green-100 uppercase w-fit">{{ o.promotion_code }}</span>
+                  <span class="text-[9px] text-slate-400 font-bold ml-1">{{ o.promotion_description }}</span>
+               </div>
+               <span v-else class="text-[10px] font-bold text-slate-400 italic">None</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+               <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{{ o.items.length }}</span>
+            </td>
+            <td class="px-6 py-4">
+               <div class="text-sm font-black text-emerald-600">${{ o.total_amount }}</div>
+               <div v-if="o.discount > 0" class="text-[9px] text-rose-400 font-bold mt-0.5">-${{ o.discount }} save</div>
+            </td>
             
-            <!-- Expanded Details Row -->
-            <tr v-if="expandedOrderId === o.id" class="bg-slate-50/50">
-               <td colspan="8" class="px-6 py-4">
-                  <div class="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-                      <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Order Items</h4>
-                      <div class="space-y-2">
-                          <div v-for="item in o.items" :key="item.id" class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-100 transition-all">
-                              <div class="flex items-center gap-3">
-                                  <div class="w-8 h-8 rounded bg-slate-100 overflow-hidden">
-                                      <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
-                                  </div>
-                                  <div>
-                                      <div class="text-xs font-bold text-slate-700">{{ item.product_name }}</div>
-                                      <div class="text-[10px] text-slate-400">Qty: {{ item.qty }} × ${{ item.unit_price }}</div>
-                                  </div>
-                              </div>
-                              <div class="text-xs font-bold text-slate-800">${{ item.line_total }}</div>
-                          </div>
-                      </div>
-                      <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-6 text-xs">
-                          <div v-if="o.promotion_description" class="mr-auto">
-                              <span class="text-slate-400">Promo:</span>
-                              <span class="ml-1 px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full font-bold text-[10px] uppercase">{{ o.promotion_description }}</span>
-                          </div>
-                          <div class="text-slate-500">Subtotal: <span class="font-bold text-slate-800">${{ o.subtotal }}</span></div>
-                          <div class="text-slate-500">Discount: <span class="font-bold text-rose-500">-${{ o.discount }}</span></div>
-                          <div class="text-emerald-600 font-black text-sm">Total: ${{ o.total_amount }}</div>
-                      </div>
-                  </div>
-               </td>
-            </tr>
-          </template>
+            <td class="px-6 py-4 text-center">
+               <span :class="`bg-${o.status_color}-100 text-${o.status_color}-700`" class="px-3 py-1 rounded-full text-[10px] font-black uppercase">{{ o.order_status }}</span>
+            </td>
+
+            <td class="px-6 py-4 text-center">
+               <span :class="`bg-${o.payment_color}-100 text-${o.payment_color}-700`" class="px-3 py-1 rounded-full text-[10px] font-black uppercase">{{ o.payment_status }}</span>
+            </td>
+
+            <td class="px-6 py-4 text-[11px] text-slate-400 font-mono">{{ o.created_at }}</td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2 text-right">
+                <button @click="openViewModal(o)" class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-all shadow-sm" title="View Details">
+                  <v-icon size="18">mdi-eye-outline</v-icon>
+                </button>
+                <button @click="deleteItem(o.id)" class="p-1.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100 transition-all shadow-sm" title="Delete">
+                  <v-icon size="18">mdi-trash-can-outline</v-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
       <div v-if="orders.links" class="p-3 flex justify-center gap-1">
          <Link v-for="(link, i) in orders.links" :key="i" :href="link.url || '#'" v-html="link.label" class="px-3 py-1 text-xs rounded" :class="link.active ? 'bg-green-500 text-white' : 'text-gray-500'" />
       </div>
     </div>
+
+    <!-- VIEW ORDER MODAL -->
+    <Transition name="modal-fade">
+      <div v-if="showViewModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" @click="showViewModal = false"></div>
+        <div class="relative bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-pop flex flex-col max-h-[90vh]">
+          <!-- Header -->
+          <div class="px-8 py-6 flex justify-between items-center border-b border-slate-100">
+            <div>
+              <h2 class="text-xl font-black tracking-tight text-slate-800">Order Details #{{ viewOrder.order_number }}</h2>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Placed on {{ viewOrder.created_at }}</p>
+            </div>
+            <button @click="showViewModal = false" class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center hover:bg-emerald-100 transition-all group">
+              <v-icon color="emerald">mdi-close</v-icon>
+            </button>
+          </div>
+
+          <div class="p-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/30">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Left: Customer & Status -->
+              <div class="lg:col-span-1 space-y-6">
+                <!-- Customer Card -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                  <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Customer Info</h3>
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold border border-emerald-100 overflow-hidden shrink-0 shadow-sm">
+                      <img v-if="viewOrder.customer_image" :src="viewOrder.customer_image" class="w-full h-full object-cover">
+                      <div v-else class="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600">
+                        {{ viewOrder.customer_name.charAt(0) }}
+                      </div>
+                    </div>
+                    <div>
+                      <div class="font-black text-slate-800">{{ viewOrder.customer_name }}</div>
+                      <div class="text-[11px] text-slate-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">Verified Customer</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status Management -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                  <div>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Update Order Status</h3>
+                    <div class="flex flex-wrap gap-2">
+                      <button v-for="s in ['PENDING','COMPLETED','CANCELLED']" :key="s" 
+                        @click="updateStatus(viewOrder, 'Order', s)"
+                        :class="[
+                          viewOrder.order_status === s ? 'ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500 hover:bg-slate-100',
+                          'px-3 py-2 rounded-xl text-[10px] font-black transition-all flex-1'
+                        ]">
+                        {{ s }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="pt-4 border-t border-slate-50">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Update Payment Status</h3>
+                    <div class="flex flex-wrap gap-2">
+                       <button v-for="s in ['PENDING','PAID','REFUNDED']" :key="s" 
+                         @click="updateStatus(viewOrder, 'Payment', s)"
+                         :class="[
+                           viewOrder.payment_status === s ? 'ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500 hover:bg-slate-100',
+                           'px-3 py-2 rounded-xl text-[10px] font-black transition-all flex-1'
+                         ]">
+                         {{ s }}
+                       </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Order Items & Summary -->
+              <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Items ({{ viewOrder.items.length }})</h3>
+                  </div>
+                  <div class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
+                    <div v-for="item in viewOrder.items" :key="item.id" class="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                      <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden border border-slate-100 p-1 flex items-center justify-center">
+                          <img v-if="item.image" :src="item.image" class="w-full h-full object-contain">
+                          <v-icon v-else size="24" class="text-slate-200">mdi-package-variant</v-icon>
+                        </div>
+                        <div>
+                          <div class="text-sm font-black text-slate-800">{{ item.product_name }}</div>
+                          <div class="flex items-center gap-2 mt-0.5">
+                            <div class="text-[11px] text-slate-500 font-bold">Qty: {{ item.qty }} × ${{ item.unit_price }}</div>
+                            <div v-if="item.discount > 0" class="flex items-center gap-1.5">
+                                <v-icon size="10" class="text-rose-500">mdi-tag-outline</v-icon>
+                                <div class="px-1.5 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-black border border-rose-100 italic">
+                                  -${{ item.discount }} Promotion Applied
+                                </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="text-sm font-black text-slate-800">${{ item.line_total }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Summary Footer -->
+                  <div class="p-6 bg-slate-50 border-t border-slate-100 space-y-3">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                      <span>Subtotal</span>
+                      <span>${{ viewOrder.subtotal }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                       <div class="flex items-center gap-2">
+                          <span>Discount</span>
+                          <span v-if="viewOrder.promotion_code !== 'None'" class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] uppercase tracking-tighter">{{ viewOrder.promotion_code }}</span>
+                       </div>
+                       <span class="text-rose-500">-${{ viewOrder.discount }}</span>
+                    </div>
+                    <div class="h-px bg-slate-200 my-2"></div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm font-black text-slate-800 uppercase tracking-widest">Total Amount</span>
+                      <span class="text-2xl font-black text-emerald-600">${{ viewOrder.total_amount }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="px-8 py-6 bg-white border-t border-slate-100 flex justify-end shrink-0">
+             <button @click="showViewModal = false" class="px-10 py-3 bg-emerald-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-emerald-700 shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+               Close Detailed View
+             </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </AdminLayout>
 </template>
+
+<style scoped>
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.animate-pop { animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes pop { 
+  from { opacity: 0; transform: translateY(30px) scale(0.95); } 
+  to { opacity: 1; transform: translateY(0) scale(1); } 
+}
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+</style>

@@ -176,9 +176,14 @@ function goToPage(url) {
       <div v-if="showModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" @click="showModal = false"></div>
 
-        <div class="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-pop">
-          <div class="bg-gradient-to-tr from-green-600 to-emerald-400 px-8 py-6 text-white">
-            <h2 class="text-xl font-black tracking-tight">{{ isEdit ? 'Edit Brand' : 'Add New Brand' }}</h2>
+        <div class="relative bg-white w-full max-w-5xl rounded-[2rem] shadow-2xl overflow-hidden animate-pop">
+          <div class="bg-white px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+            <div class="text-left">
+              <h2 class="text-xl font-black text-slate-800 tracking-tight">{{ isEdit ? 'Edit Brand' : 'New Brand' }}</h2>
+            </div>
+            <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+              <v-icon size="24">mdi-close</v-icon>
+            </button>
           </div>
 
           <div class="p-8 space-y-4">
@@ -192,24 +197,26 @@ function goToPage(url) {
                 <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleImageUpload">
              </div>
 
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Brand Name</label>
-              <input v-model="form.name" placeholder="Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-400 outline-none transition-all"/>
-              <p v-if="form.errors.name" class="text-red-500 text-xs ml-1">{{ form.errors.name }}</p>
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Brand Name</label>
+                <input v-model="form.name" placeholder="Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-400 outline-none transition-all"/>
+                <p v-if="form.errors.name" class="text-red-500 text-xs ml-1">{{ form.errors.name }}</p>
+              </div>
 
-            <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Status</label>
-              <select v-model="form.status" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none cursor-pointer">
-                <option :value="true">Active</option>
-                <option :value="false">Inactive</option>
-              </select>
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Status</label>
+                <select v-model="form.status" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none cursor-pointer">
+                  <option :value="true">Active</option>
+                  <option :value="false">Inactive</option>
+                </select>
+              </div>
             </div>
           </div>
 
           <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
             <button @click="showModal=false" class="px-6 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-            <button @click="save" :disabled="form.processing" class="px-8 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg shadow-slate-200 active:scale-95 transition-all">
+            <button @click="save" :disabled="form.processing" class="px-8 py-2.5 bg-gradient-to-tr from-green-600 to-emerald-400 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 active:scale-95 transition-all">
               {{ form.processing ? 'Saving...' : 'Save Changes' }}
             </button>
           </div>

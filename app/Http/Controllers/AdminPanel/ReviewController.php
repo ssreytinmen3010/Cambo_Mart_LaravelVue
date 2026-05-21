@@ -57,6 +57,7 @@ class ReviewController extends Controller
                 
                 'user_id' => $review->user_id,
                 'user_name' => $review->user ? $review->user->name : 'Guest',
+                'user_image' => $review->user ? $review->user->image : null,
                 
                 'create_date' => $review->create_date ? $review->create_date->format('Y-m-d H:i') : null,
                 'created_at' => $review->created_at->format('Y-m-d H:i'),

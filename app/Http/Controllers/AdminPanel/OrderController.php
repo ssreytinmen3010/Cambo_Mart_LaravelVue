@@ -45,6 +45,7 @@ class OrderController extends Controller
                 'id' => $order->id,
                 'order_number' => $order->order_number,
                 'customer_name' => $order->user ? $order->user->name : 'Guest',
+                'customer_image' => $order->user ? $order->user->image : null,
                 'promotion_code' => $order->promotion ? $order->promotion->code : 'None',
                 'promotion_description' => $order->promotion ? $order->promotion->description : null,
                 'subtotal' => $order->subtotal_amount,
@@ -55,14 +56,28 @@ class OrderController extends Controller
                 'status_color' => $order->order_status_color,
                 'payment_color' => $order->payment_status_color,
                 'created_at' => $order->created_at->format('Y-m-d H:i'),
-                'items' => $order->items->map(fn ($item) => [
-                    'id' => $item->id,
-                    'product_name' => $item->product ? $item->product->name : 'Unknown Product',
-                    'image' => $item->product ? $item->product->image : null,
-                    'qty' => $item->qty,
-                    'unit_price' => $item->unit_price,
-                    'line_total' => $item->line_total, 
-                ]),
+                'items' => $order->items->map(function ($item) use ($order) {
+                    $itemDiscount = 0;
+                    $promo = $order->promotion;
+                    
+                    if ($promo && $promo->promo_type === 'PERCENTAGE') {
+                        $isPromoProduct = ($promo->product_id == $item->product_id);
+                        $isGlobalPromo = (!$promo->product_id);
+                        if ($isPromoProduct || $isGlobalPromo) {
+                            $itemDiscount = ($item->qty * $item->unit_price * $promo->discount_value) / 100;
+                        }
+                    }
+
+                    return [
+                        'id' => $item->id,
+                        'product_name' => $item->product ? $item->product->name : 'Unknown Product',
+                        'image' => $item->product ? $item->product->image : null,
+                        'qty' => $item->qty,
+                        'unit_price' => $item->unit_price,
+                        'line_total' => $item->line_total,
+                        'discount' => round($itemDiscount, 2),
+                    ];
+                }),
             ]);
 
         return Inertia::render('Admin/Order/Index', [

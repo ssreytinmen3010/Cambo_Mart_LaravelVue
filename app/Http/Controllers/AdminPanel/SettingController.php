@@ -19,6 +19,10 @@ class SettingController extends Controller
             'store_name' => Setting::get('store_name', config('app.name', 'CamboMart')),
             'currency' => Setting::get('currency', 'USD'),
             'logo' => Setting::get('logo'),
+            'address' => Setting::get('address'),
+            'phone' => Setting::get('phone'),
+            'map_lat' => Setting::get('map_lat'),
+            'map_long' => Setting::get('map_long'),
         ];
 
         return Inertia::render('Admin/Settings/Index', [
@@ -74,10 +78,19 @@ class SettingController extends Controller
             'store_name' => 'required|string|max:255',
             'currency' => 'required|string|in:USD',
             'logo' => 'nullable|string',
+            'address' => 'required|string|max:500',
+            'phone' => 'required|string|max:20',
+            'map_lat' => 'required|string|max:50',
+            'map_long' => 'required|string|max:50',
         ]);
 
         Setting::set('store_name', $validated['store_name']);
         Setting::set('currency', $validated['currency']);
+        Setting::set('address', $validated['address']);
+        Setting::set('phone', $validated['phone']);
+        Setting::set('map_lat', $validated['map_lat']);
+        Setting::set('map_long', $validated['map_long']);
+
         if (isset($validated['logo'])) {
             Setting::set('logo', $validated['logo']);
         }

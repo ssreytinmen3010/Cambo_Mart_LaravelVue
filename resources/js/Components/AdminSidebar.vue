@@ -103,6 +103,7 @@ const storeNameParts = computed(() => {
 const navItems = [
   { title: "Main Menu", isHeader: true },
   { title: "Dashboard", path: "/admin/dashboard", icon: "mdi-view-dashboard-outline" },
+  { title: "Locations", path: "/admin/locations", icon: "mdi-map-marker-radius-outline" },
   { title: "Users", path: "/admin/users", icon: "mdi-account-group-outline" },
   { title: "Products", path: "/admin/products", icon: "mdi-package-variant-closed" },
   { title: "Promotions", path: "/admin/promotions", icon: "mdi-percent" },

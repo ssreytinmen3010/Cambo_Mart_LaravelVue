@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminPanel\ProductController;
 use App\Http\Controllers\AdminPanel\PromotionController;
 use App\Http\Controllers\AdminPanel\OrderController;
 use App\Http\Controllers\AdminPanel\ReviewController;
+use App\Http\Controllers\AdminPanel\LocationController;
 use App\Http\Controllers\ImageController;
 use App\Models\User;
 use App\Models\AdminPanel\Product;
@@ -90,6 +91,9 @@ Route::post('/admin/users/list/add', [UserController::class, 'store'])
 Route::patch('/admin/users/list/update/{user}', [UserController::class, 'update'])
     ->middleware(['auth', 'verified', 'role:admin']);
 
+Route::patch('/admin/users/{user}/password', [UserController::class, 'changePassword'])
+    ->middleware(['auth', 'verified', 'role:admin']);
+
 Route::patch('/admin/users/{user}/status', [UserController::class, 'updateStatus'])
     ->middleware(['auth', 'verified', 'role:admin']);
 
@@ -143,9 +147,8 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::put('/settings/profile', [SettingController::class, 'updateProfile'])->name('admin.settings.update-profile');
     Route::put('/settings/password', [SettingController::class, 'updatePassword'])->name('admin.settings.update-password');
     Route::put('/settings/system', [SettingController::class, 'updateSystem'])->name('admin.settings.update-system');
-    
 
-
+    Route::resource('locations', LocationController::class)->names('admin.locations');
 });
 
 

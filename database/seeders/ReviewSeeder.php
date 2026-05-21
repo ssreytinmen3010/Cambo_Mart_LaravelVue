@@ -40,8 +40,8 @@ class ReviewSeeder extends Seeder
             ],
             [
                 'review_number' => 'REV-' . str_pad($startNumber + 1, 6, '0', STR_PAD_LEFT),
-                'product_id' => $product->id,
-                'user_id' => $user->id,
+                'product_id' => 2,
+                'user_id' => 2,
                 'rating_score' => 4,
                 'review_text' => 'Good product overall. The packaging was nice and the item arrived on time. Would buy again.',
                 'review_status' => Review::STATUS_PENDING,
