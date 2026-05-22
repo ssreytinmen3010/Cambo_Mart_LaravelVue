@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import QuickViewModal from '@/Components/User/QuickViewModal.vue';
+import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
     product: {
@@ -10,27 +11,15 @@ const props = defineProps({
     },
 });
 
+const { addToCart, isInWishlist, toggleWishlist } = useStore();
 const quickOpen = ref(false);
-const wishlist = ref([]);
 
-const wished = computed(() => wishlist.value.includes(props.product.id));
+const wished = computed(() => isInWishlist(props.product.id));
 
 const discount = computed(() => {
     if (!props.product.oldPrice) return 0;
     return Math.round((1 - props.product.price / props.product.oldPrice) * 100);
 });
-
-function addToCart(product) {
-    console.log('Add to cart:', product);
-}
-
-function toggleWishlist(id) {
-    if (wishlist.value.includes(id)) {
-        wishlist.value = wishlist.value.filter((item) => item !== id);
-    } else {
-        wishlist.value.push(id);
-    }
-}
 </script>
 
 <template>

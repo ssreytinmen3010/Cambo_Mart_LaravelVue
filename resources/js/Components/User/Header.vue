@@ -2,11 +2,11 @@
 import { ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useActivePath } from '@/composables/useActivePath';
+import { useStore } from '@/composables/useStore';
 
 const mobileOpen = ref(false);
 const dropdownOpen = ref(false);
-const cartCount = ref(2);
-const wishlist = ref([1, 2]);
+const { cartCount, wishlist } = useStore();
 
 const page = usePage();
 const { isActive } = useActivePath();
@@ -82,7 +82,7 @@ function linkActive(match) {
                     >
                         ❤️
                         <span
-                            v-if="wishlist.length > 0"
+                            v-if="wishlist.length"
                             class="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 grid place-items-center text-[10px] font-bold rounded-full bg-primary text-primary-foreground"
                         >
                             {{ wishlist.length }}
@@ -95,7 +95,7 @@ function linkActive(match) {
                     >
                         🛒
                         <span
-                            v-if="cartCount > 0"
+                            v-if="cartCount"
                             class="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 grid place-items-center text-[10px] font-bold rounded-full bg-primary text-primary-foreground animate-scale-in"
                         >
                             {{ cartCount }}
@@ -127,7 +127,7 @@ function linkActive(match) {
 
                             <template v-else>
                                 <Link :href="route('user.dashboard')" class="dropdown-item">My Dashboard</Link>
-                                <Link :href="route('profile.edit')" class="dropdown-item">My Profile</Link>
+                                <Link :href="route('user.profile')" class="dropdown-item">My Profile</Link>
                                 <Link :href="route('wishlist')" class="dropdown-item">Wishlist</Link>
                                 <Link
                                     :href="route('logout')"

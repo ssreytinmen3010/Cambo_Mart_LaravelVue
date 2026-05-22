@@ -16,6 +16,10 @@ export function useActivePath() {
             return current === '/' || current === '';
         }
 
+        if (path === '/account' && (current === '/account' || current === '/profile')) {
+            return true;
+        }
+
         return current === path || current.startsWith(`${path}/`);
     }
 

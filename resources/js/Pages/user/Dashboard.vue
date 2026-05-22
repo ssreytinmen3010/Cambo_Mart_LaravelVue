@@ -29,11 +29,19 @@ import UserLayout from '@/Layouts/UserLayout.vue';
                 </a>
 
                 <a
-                    :href="route('profile.edit')"
+                    :href="route('user.profile')"
                     class="rounded-2xl border border-border/60 bg-card p-6 shadow-soft hover:border-primary/30 transition-colors"
                 >
-                    <p class="font-semibold">Profile settings</p>
-                    <p class="mt-1 text-sm text-muted-foreground">Update your account details</p>
+                    <p class="font-semibold">My profile</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Orders, wishlist, and account settings</p>
+                </a>
+
+                <a
+                    :href="route('checkout')"
+                    class="rounded-2xl border border-border/60 bg-card p-6 shadow-soft hover:border-primary/30 transition-colors"
+                >
+                    <p class="font-semibold">Checkout</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Complete your order</p>
                 </a>
             </div>
         </div>

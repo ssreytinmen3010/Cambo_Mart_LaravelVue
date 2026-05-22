@@ -76,11 +76,14 @@ Route::get('/user/dashboard', function () {
 Route::prefix('')->group(function () {
     Route::get('/shop', fn () => Inertia::render('User/Shop/Index'))->name('shop');
     Route::get('/cart', fn () => Inertia::render('User/Cart/Index'))->name('cart');
+    Route::get('/checkout', fn () => Inertia::render('User/Checkout/Index'))->name('checkout');
     Route::get('/wishlist', fn () => Inertia::render('User/Wishlist/Index'))->name('wishlist');
+    Route::get('/account', fn () => Inertia::render('User/Profile/Index'))->name('user.profile');
     Route::get('/categories', fn () => Inertia::render('User/Categories/Index'))->name('categories');
     Route::get('/brand', fn () => Inertia::render('User/Brand/Index'))->name('brand');
     Route::get('/about', fn () => Inertia::render('User/About/Index'))->name('about');
     Route::get('/contact', fn () => Inertia::render('User/Contact/Index'))->name('contact');
+    Route::redirect('/root', '/')->name('root');
 });
 
 Route::get('/admin/users/list', [UserController::class, 'list'])

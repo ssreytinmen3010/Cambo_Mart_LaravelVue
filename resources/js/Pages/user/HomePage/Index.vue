@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
+import { products } from '@/lib/mock-data';
 
 const currentIndex = ref(0);
 
@@ -61,52 +62,7 @@ const features = ref([
     { icon: '🎧', title: '24/7 Support', desc: 'Always here for you' },
 ]);
 
-const featuredProducts = ref([
-    {
-        id: 1,
-        name: 'Organic Cambodian Mango',
-        code: 'FRU-001',
-        price: 4.99,
-        oldPrice: 6.99,
-        image: 'https://images.unsplash.com/photo-1553279768-865021837e9b',
-        rating: 4.8,
-        reviews: 124,
-        badge: 'Sale',
-        inStock: true,
-    },
-    {
-        id: 2,
-        name: 'Fresh Morning Glory',
-        code: 'VEG-012',
-        price: 1.49,
-        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999',
-        rating: 4.5,
-        reviews: 89,
-        badge: 'New',
-        inStock: true,
-    },
-    {
-        id: 3,
-        name: 'Farm Eggs (12 pack)',
-        code: 'DAI-008',
-        price: 3.25,
-        image: 'https://images.unsplash.com/photo-1582722872405-2c03e42f8d83',
-        rating: 4.9,
-        reviews: 210,
-        badge: 'Hot',
-        inStock: true,
-    },
-    {
-        id: 4,
-        name: 'Artisan Sourdough Loaf',
-        code: 'BAK-003',
-        price: 5.5,
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff',
-        rating: 4.6,
-        reviews: 67,
-        inStock: false,
-    },
-]);
+const featuredProducts = products.slice(0, 4);
 
 let interval = null;
 
