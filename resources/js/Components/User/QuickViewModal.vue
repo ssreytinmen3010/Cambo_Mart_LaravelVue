@@ -1,216 +1,203 @@
+<script setup>
+import { ref, computed, watch } from 'vue';
+import { X, Minus, Plus, ShoppingCart } from 'lucide-vue-next';
+import { useStore } from '@/composables/useStore';
+
+const props = defineProps({
+    product: {
+        type: Object,
+        required: true,
+    },
+    open: {
+        type: Boolean,
+        default: false,
+    },
+});
+
+const emit = defineEmits(['close']);
+
+const { addToCart, isInWishlist, toggleWishlist } = useStore();
+const qty = ref(1);
+
+const wished = computed(() => isInWishlist(props.product.id));
+
+const description = computed(
+    () =>
+        props.product.description ??
+        'Hand-picked, naturally sourced, and delivered fresh to your door. Premium quality you can trust from CamboMart.',
+);
+
+const discount = computed(() => {
+    if (!props.product.oldPrice) return 0;
+    return Math.round((1 - props.product.price / props.product.oldPrice) * 100);
+});
+
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (isOpen) qty.value = 1;
+    },
+);
+
+function decreaseQty() {
+    qty.value = Math.max(1, qty.value - 1);
+}
+
+function increaseQty() {
+    qty.value += 1;
+}
+
+function handleAddToCart() {
+    if (!props.product.inStock) return;
+    addToCart(props.product, qty.value);
+    emit('close');
+}
+
+function handleWishlist() {
+    toggleWishlist(props.product.id);
+}
+</script>
+
 <template>
     <transition name="fade">
-        <div v-if="open"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-
-            <div
-                class="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div
+            v-if="open"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8"
+            @click.self="emit('close')"
+        >
+            <div class="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-card border border-border/60 shadow-2xl">
+                <button
+                    type="button"
+                    class="absolute top-4 right-4 z-10 h-9 w-9 grid place-items-center rounded-full bg-background/90 border border-border/60 hover:bg-secondary transition-colors"
+                    aria-label="Close"
+                    @click="emit('close')"
+                >
+                    <X class="h-4 w-4" />
+                </button>
 
                 <div class="grid md:grid-cols-2">
+                    <div class="relative aspect-square bg-secondary/40">
+                        <img :src="product.image" :alt="product.name" class="h-full w-full object-cover" />
 
-                    <!-- Product Image -->
-                    <div class="aspect-square bg-secondary/40">
-
-                        <img :src="product.image"
-                            :alt="product.name"
-                            class="h-full w-full object-cover" />
+                        <span
+                            v-if="product.badge"
+                            class="absolute top-4 left-4 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-primary text-primary-foreground"
+                        >
+                            {{ product.badge }}
+                        </span>
                     </div>
 
-                    <!-- Content -->
-                    <div class="p-6 md:p-8 flex flex-col">
-
-                        <!-- Top -->
-                        <div class="flex items-center gap-2 text-xs">
-
-                            <span class="font-mono text-muted-foreground">
-                                {{ product.code }}
-                            </span>
-
-                            <span class="h-1 w-1 rounded-full bg-border"></span>
-
+                    <div class="p-6 md:p-8 flex flex-col max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center gap-2 text-xs flex-wrap">
+                            <span class="font-mono text-muted-foreground">{{ product.code }}</span>
+                            <span class="h-1 w-1 rounded-full bg-border" />
                             <span
-                                :class="product.inStock
-                                    ? 'text-primary font-medium'
-                                    : 'text-destructive'">
-
+                                class="flex items-center gap-1 font-medium"
+                                :class="product.inStock ? 'text-primary' : 'text-destructive'"
+                            >
+                                <span
+                                    class="h-1.5 w-1.5 rounded-full"
+                                    :class="product.inStock ? 'bg-primary' : 'bg-destructive'"
+                                />
                                 {{ product.inStock ? 'In stock' : 'Out of stock' }}
                             </span>
                         </div>
 
-                        <!-- Name -->
-                        <h2 class="text-2xl font-bold mt-2">
+                        <h2 class="text-2xl md:text-3xl font-bold mt-2 leading-tight">
                             {{ product.name }}
                         </h2>
 
-                        <!-- Rating -->
-                        <div class="mt-2 flex items-center gap-2">
-
-                            <div class="flex">
-
-                                <span v-for="i in 5"
+                        <div class="mt-2 flex items-center gap-2 flex-wrap">
+                            <div class="flex items-center">
+                                <span
+                                    v-for="i in 5"
                                     :key="i"
-                                    :class="i <= Math.round(product.rating)
-                                        ? 'text-warning'
-                                        : 'text-muted'">
-
+                                    class="text-sm"
+                                    :class="i <= Math.round(product.rating) ? 'text-warning' : 'text-muted'"
+                                >
                                     ⭐
                                 </span>
                             </div>
-
                             <span class="text-sm text-muted-foreground">
-                                {{ Number(product.rating).toFixed(1) }}
-                                ·
-                                {{ product.reviews }} reviews
+                                {{ Number(product.rating).toFixed(1) }} · {{ product.reviews }} reviews
                             </span>
                         </div>
 
-                        <!-- Price -->
-                        <div class="mt-4 flex items-baseline gap-3">
-
-                            <span class="text-3xl font-bold">
+                        <div class="mt-4 flex items-baseline gap-3 flex-wrap">
+                            <span class="text-3xl font-bold text-primary">
                                 ${{ Number(product.price).toFixed(2) }}
                             </span>
-
-                            <span v-if="product.oldPrice"
-                                class="text-base text-muted-foreground line-through">
-
+                            <span v-if="product.oldPrice" class="text-base text-muted-foreground line-through">
                                 ${{ Number(product.oldPrice).toFixed(2) }}
+                            </span>
+                            <span
+                                v-if="discount > 0"
+                                class="text-xs font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive"
+                            >
+                                -{{ discount }}%
                             </span>
                         </div>
 
-                        <!-- Description -->
                         <p class="mt-4 text-sm text-muted-foreground leading-relaxed">
-                            {{ product.description }}
+                            {{ description }}
                         </p>
 
-                        <!-- Actions -->
                         <div class="mt-6 flex items-center gap-3">
-
-                            <!-- Quantity -->
-                            <div class="flex items-center border rounded-full h-11">
-
+                            <div class="flex items-center border border-border rounded-full h-11">
                                 <button
-                                    class="h-11 w-11 grid place-items-center hover:bg-secondary rounded-l-full"
-                                    @click="decreaseQty">
-
-                                    ➖
+                                    type="button"
+                                    class="h-11 w-11 grid place-items-center hover:bg-secondary rounded-l-full transition-colors"
+                                    :disabled="qty <= 1"
+                                    @click="decreaseQty"
+                                >
+                                    <Minus class="h-4 w-4" />
                                 </button>
-
-                                <span class="w-10 text-center font-semibold">
-                                    {{ qty }}
-                                </span>
-
+                                <span class="w-10 text-center font-semibold text-sm">{{ qty }}</span>
                                 <button
-                                    class="h-11 w-11 grid place-items-center hover:bg-secondary rounded-r-full"
-                                    @click="qty++">
-
-                                    ➕
+                                    type="button"
+                                    class="h-11 w-11 grid place-items-center hover:bg-secondary rounded-r-full transition-colors"
+                                    @click="increaseQty"
+                                >
+                                    <Plus class="h-4 w-4" />
                                 </button>
                             </div>
 
-                            <!-- Add To Cart -->
                             <button
+                                type="button"
                                 :disabled="!product.inStock"
+                                title="Add to cart"
+                                class="h-11 w-11 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-glow hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
                                 @click="handleAddToCart"
-                                class="flex-1 rounded-full h-11 bg-primary text-white font-medium hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed flex items-center justify-center gap-2">
-
-                                🛒 Add to cart
+                            >
+                                <ShoppingCart class="h-5 w-5 shrink-0" stroke-width="2" />
                             </button>
 
-                            <!-- Wishlist -->
                             <button
-                                @click="toggleWishlist(product.id)"
+                                type="button"
+                                :title="wished ? 'Remove from wishlist' : 'Add to wishlist'"
                                 :class="[
-                                    'h-11 w-11 grid place-items-center rounded-full border',
+                                    'h-11 w-11 grid place-items-center rounded-full border border-border/60 bg-white shadow-md transition-colors text-lg',
                                     wished
-                                        ? 'bg-destructive text-destructive-foreground border-destructive'
-                                        : 'hover:bg-secondary'
-                                ]">
-
-                                ❤️
+                                        ? '!bg-destructive !text-white !border-destructive'
+                                        : 'hover:bg-primary hover:border-primary',
+                                ]"
+                                @click="handleWishlist"
+                            >
+                                <span aria-hidden="true">❤️</span>
                             </button>
                         </div>
 
-                        <!-- Footer -->
-                        <div
-                            class="mt-6 pt-6 border-t text-xs text-muted-foreground space-y-1.5">
-
+                        <div class="mt-6 pt-6 border-t border-border/60 text-xs text-muted-foreground space-y-1.5">
                             <p>🚚 Free delivery on orders over $25</p>
-
                             <p>🔄 7-day return policy</p>
-
                             <p>🌿 100% naturally sourced</p>
                         </div>
-
-                        <!-- Close -->
-                        <button
-                            @click="$emit('close')"
-                            class="mt-6 text-sm text-muted-foreground hover:text-foreground">
-
-                            Close
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </transition>
 </template>
-
-<script>
-export default {
-    name: "QuickViewModal",
-
-    props: {
-        product: {
-            type: Object,
-            required: true,
-        },
-
-        open: {
-            type: Boolean,
-            default: false,
-        },
-    },
-
-    emits: ["close"],
-
-    data() {
-        return {
-            qty: 1,
-            wishlist: [],
-        };
-    },
-
-    computed: {
-        wished() {
-            return this.wishlist.includes(this.product.id);
-        },
-    },
-
-    methods: {
-        decreaseQty() {
-            this.qty = Math.max(1, this.qty - 1);
-        },
-
-        addToCart(product, qty) {
-            console.log("Add to cart:", product, qty);
-        },
-
-        handleAddToCart() {
-            this.addToCart(this.product, this.qty);
-            this.$emit("close");
-        },
-
-        toggleWishlist(id) {
-            if (this.wishlist.includes(id)) {
-                this.wishlist = this.wishlist.filter(item => item !== id);
-            } else {
-                this.wishlist.push(id);
-            }
-        },
-    },
-};
-</script>
 
 <style scoped>
 .fade-enter-active,

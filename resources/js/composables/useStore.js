@@ -2,7 +2,7 @@ import { reactive, computed } from 'vue';
 
 const state = reactive({
     cart: [],
-    wishlist: [1, 5],
+    wishlist: [1, 2],
 });
 
 export function useStore() {

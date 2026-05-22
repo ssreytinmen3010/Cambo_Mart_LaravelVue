@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { ShoppingCart } from 'lucide-vue-next';
 import QuickViewModal from '@/Components/User/QuickViewModal.vue';
 import { useStore } from '@/composables/useStore';
 
@@ -12,7 +12,7 @@ const props = defineProps({
 });
 
 const { addToCart, isInWishlist, toggleWishlist } = useStore();
-const quickOpen = ref(false);
+const detailOpen = ref(false);
 
 const wished = computed(() => isInWishlist(props.product.id));
 
@@ -20,22 +20,24 @@ const discount = computed(() => {
     if (!props.product.oldPrice) return 0;
     return Math.round((1 - props.product.price / props.product.oldPrice) * 100);
 });
+
+function openDetail() {
+    detailOpen.value = true;
+}
 </script>
 
 <template>
     <div>
         <div
-            class="group relative bg-card rounded-3xl overflow-hidden border border-border/60 hover:border-primary/30 shadow-soft hover:shadow-hover transition-all duration-300 hover:-translate-y-1"
+            class="product-card group relative bg-card rounded-3xl overflow-hidden border border-border/60 hover:border-primary/30 shadow-soft hover:shadow-hover transition-all duration-300 hover:-translate-y-1"
         >
-            <div class="relative aspect-square overflow-hidden bg-secondary/50">
-                <Link :href="route('shop')">
-                    <img
-                        :src="product.image"
-                        :alt="product.name"
-                        loading="lazy"
-                        class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                </Link>
+            <div class="product-card-image relative aspect-square overflow-hidden bg-secondary/50">
+                <img
+                    :src="product.image"
+                    :alt="product.name"
+                    loading="lazy"
+                    class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
 
                 <div class="absolute top-3 left-3 flex flex-col gap-1.5">
                     <span
@@ -62,34 +64,35 @@ const discount = computed(() => {
                     </span>
                 </div>
 
-                <div
-                    class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all"
-                >
+                <div class="absolute top-3 right-3 z-20 flex flex-col gap-2 pointer-events-auto">
                     <button
                         type="button"
+                        :title="wished ? 'Remove from wishlist' : 'Add to wishlist'"
                         :class="[
-                            'h-9 w-9 grid place-items-center rounded-full backdrop-blur shadow-soft transition-colors',
+                            'product-card-action h-9 w-9 grid place-items-center rounded-full border border-border/60 bg-white/95 text-foreground shadow-md backdrop-blur-sm transition-all duration-300',
+                            'opacity-100 group-hover:scale-110',
                             wished
-                                ? 'bg-destructive text-destructive-foreground'
-                                : 'bg-background/90 hover:bg-primary hover:text-primary-foreground',
+                                ? '!bg-destructive !text-white !border-destructive'
+                                : 'hover:bg-primary hover:text-primary-foreground hover:border-primary',
                         ]"
-                        @click="toggleWishlist(product.id)"
+                        @click.stop="toggleWishlist(product.id)"
                     >
-                        ❤️
+                        <span class="text-base leading-none" aria-hidden="true">❤️</span>
                     </button>
 
                     <button
                         type="button"
-                        class="h-9 w-9 grid place-items-center rounded-full bg-background/90 backdrop-blur shadow-soft hover:bg-primary hover:text-primary-foreground transition-colors"
-                        @click="quickOpen = true"
+                        title="View detail"
+                        class="product-card-action h-9 w-9 grid place-items-center rounded-full border border-border/60 bg-white/95 text-foreground shadow-md backdrop-blur-sm transition-all duration-300 opacity-100 group-hover:scale-110 hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                        @click.stop="openDetail"
                     >
-                        👁️
+                        <span class="text-base leading-none" aria-hidden="true">👁️</span>
                     </button>
                 </div>
 
                 <div
                     v-if="!product.inStock"
-                    class="absolute inset-0 bg-background/70 backdrop-blur-sm grid place-items-center"
+                    class="absolute inset-0 bg-background/70 backdrop-blur-sm grid place-items-center z-10"
                 >
                     <span class="px-3 py-1 rounded-full bg-foreground text-background text-xs font-semibold">
                         Out of stock
@@ -99,10 +102,11 @@ const discount = computed(() => {
                 <button
                     type="button"
                     :disabled="!product.inStock"
-                    class="absolute bottom-3 left-3 right-3 h-10 rounded-full bg-foreground text-background text-sm font-medium flex items-center justify-center gap-2 translate-y-14 group-hover:translate-y-0 transition-transform duration-300 hover:bg-primary disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
-                    @click="addToCart(product)"
+                    class="product-card-cart absolute bottom-3 left-3 right-3 z-20 h-10 rounded-full bg-foreground text-background text-sm font-medium flex items-center justify-center gap-2 translate-y-[120%] group-hover:translate-y-0 transition-transform duration-300 hover:bg-primary disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed pointer-events-auto"
+                    @click.stop="addToCart(product)"
                 >
-                    🛒 Add to cart
+                    <ShoppingCart class="h-4 w-4" />
+                    Add to cart
                 </button>
             </div>
 
@@ -115,12 +119,13 @@ const discount = computed(() => {
                     </span>
                 </div>
 
-                <Link
-                    :href="route('shop')"
-                    class="block font-semibold text-sm leading-snug line-clamp-2 hover:text-primary transition-colors min-h-[2.5rem]"
+                <button
+                    type="button"
+                    class="block w-full text-left font-semibold text-sm leading-snug line-clamp-2 hover:text-primary transition-colors min-h-[2.5rem]"
+                    @click="openDetail"
                 >
                     {{ product.name }}
-                </Link>
+                </button>
 
                 <div class="mt-2 flex items-center gap-1 text-xs">
                     <div class="flex items-center">
@@ -132,7 +137,9 @@ const discount = computed(() => {
                             ⭐
                         </span>
                     </div>
-                    <span class="text-muted-foreground">({{ product.reviews }})</span>
+                    <span class="text-muted-foreground">
+                        {{ Number(product.rating).toFixed(1) }} · {{ product.reviews }} reviews
+                    </span>
                 </div>
 
                 <div class="mt-3 flex items-baseline gap-2">
@@ -144,6 +151,25 @@ const discount = computed(() => {
             </div>
         </div>
 
-        <QuickViewModal :product="product" :open="quickOpen" @close="quickOpen = false" />
+        <QuickViewModal :product="product" :open="detailOpen" @close="detailOpen = false" />
     </div>
 </template>
+
+<style scoped>
+.product-card-image:hover .product-card-action,
+.product-card:hover .product-card-action {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.product-card-image:hover .product-card-cart,
+.product-card:hover .product-card-cart {
+    transform: translateY(0);
+}
+
+/* Always show action icons (hover-only was hiding them on touch / some browsers) */
+.product-card-action {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+}
+</style>

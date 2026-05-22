@@ -13,9 +13,27 @@ export const brands = [
     { id: 'artisan', name: 'ArtisanBake', logo: '🍞' },
 ];
 
+const defaultDescription =
+    'Hand-picked, naturally sourced, and delivered fresh to your door. Premium quality you can trust from CamboMart.';
+
 export const products = [
     {
         id: 1,
+        name: 'Fresh Bananas',
+        code: 'CM-1001',
+        price: 4.7,
+        oldPrice: 5.99,
+        image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11d08e',
+        rating: 4.8,
+        reviews: 49,
+        badge: 'Sale',
+        inStock: true,
+        category: 'fruits',
+        brand: 'tropic',
+        description: defaultDescription,
+    },
+    {
+        id: 2,
         name: 'Organic Cambodian Mango',
         code: 'FRU-001',
         price: 4.99,
@@ -29,7 +47,7 @@ export const products = [
         brand: 'tropic',
     },
     {
-        id: 2,
+        id: 3,
         name: 'Fresh Morning Glory',
         code: 'VEG-012',
         price: 1.49,
@@ -42,7 +60,7 @@ export const products = [
         brand: 'farmfresh',
     },
     {
-        id: 3,
+        id: 4,
         name: 'Farm Eggs (12 pack)',
         code: 'DAI-008',
         price: 3.25,
@@ -55,7 +73,7 @@ export const products = [
         brand: 'meadow',
     },
     {
-        id: 4,
+        id: 5,
         name: 'Artisan Sourdough Loaf',
         code: 'BAK-003',
         price: 5.5,
@@ -67,7 +85,7 @@ export const products = [
         brand: 'artisan',
     },
     {
-        id: 5,
+        id: 6,
         name: 'Organic Red Apples',
         code: 'FRU-014',
         price: 3.99,
@@ -81,7 +99,7 @@ export const products = [
         brand: 'tropic',
     },
     {
-        id: 6,
+        id: 7,
         name: 'Baby Spinach Bundle',
         code: 'VEG-021',
         price: 2.25,
@@ -93,7 +111,7 @@ export const products = [
         brand: 'farmfresh',
     },
     {
-        id: 7,
+        id: 8,
         name: 'Raw Wildflower Honey',
         code: 'PAN-002',
         price: 8.99,
@@ -105,7 +123,7 @@ export const products = [
         brand: 'farmfresh',
     },
     {
-        id: 8,
+        id: 9,
         name: 'Coconut Water (6-pack)',
         code: 'BEV-005',
         price: 6.5,
