@@ -2,59 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    :root {
+        --background: 40 33% 98%;
+        --foreground: 150 25% 12%;
+        --card: 0 0% 100%;
+        --card-foreground: 150 25% 12%;
+        --primary: 152 55% 38%;
+        --primary-foreground: 0 0% 100%;
+        --primary-soft: 152 45% 92%;
+        --secondary: 40 30% 94%;
+        --secondary-foreground: 150 25% 12%;
+        --muted: 40 20% 92%;
+        --muted-foreground: 150 10% 42%;
+        --accent: 152 45% 92%;
+        --accent-foreground: 152 55% 28%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 100%;
+        --warning: 38 92% 50%;
+        --border: 40 18% 88%;
+        --input: 40 18% 88%;
+        --ring: 152 55% 38%;
+        --radius: 0.75rem;
+        --gradient-brand: linear-gradient(135deg, hsl(152 55% 38%), hsl(168 50% 42%));
+        --gradient-soft: linear-gradient(135deg, hsl(152 45% 96%), hsl(40 33% 98%));
+        --shadow-soft: 0 2px 12px -2px hsl(150 25% 12% / 0.06);
+        --shadow-card: 0 4px 24px -4px hsl(150 25% 12% / 0.08);
+        --shadow-hover: 0 12px 32px -8px hsl(152 55% 38% / 0.15);
+        --shadow-glow: 0 0 24px -4px hsl(152 55% 38% / 0.35);
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+    }
+}
+
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-}
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 
-/* resources/css/app.css */
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+    .text-gradient-brand {
+        @apply bg-clip-text text-transparent;
+        background-image: var(--gradient-brand);
+    }
 }

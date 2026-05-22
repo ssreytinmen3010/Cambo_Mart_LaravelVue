@@ -1,24 +1,41 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import UserLayout from '@/Layouts/UserLayout.vue';
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="My Account" />
 
-    <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
-           
-        </template>
+    <UserLayout>
+        <div class="container mx-auto px-4 py-12">
+            <h1 class="text-3xl font-bold">My Dashboard</h1>
+            <p class="mt-2 text-muted-foreground">Welcome back! Your account area is ready.</p>
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">You're logged in! as user</div>
-                    
-                </div>
+            <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <a
+                    :href="route('shop')"
+                    class="rounded-2xl border border-border/60 bg-card p-6 shadow-soft hover:border-primary/30 transition-colors"
+                >
+                    <p class="font-semibold">Continue shopping</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Browse fresh products</p>
+                </a>
+
+                <a
+                    :href="route('cart')"
+                    class="rounded-2xl border border-border/60 bg-card p-6 shadow-soft hover:border-primary/30 transition-colors"
+                >
+                    <p class="font-semibold">My cart</p>
+                    <p class="mt-1 text-sm text-muted-foreground">View items in your basket</p>
+                </a>
+
+                <a
+                    :href="route('profile.edit')"
+                    class="rounded-2xl border border-border/60 bg-card p-6 shadow-soft hover:border-primary/30 transition-colors"
+                >
+                    <p class="font-semibold">Profile settings</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Update your account details</p>
+                </a>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </UserLayout>
 </template>

@@ -31,21 +31,12 @@ use App\Http\Controllers\AdminPanel\SettingController;
 */
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        if (auth()->user()->role->name == 'admin') {
-            return Inertia::render('Admin/Dashboard');
-        } else {
-            return Inertia::render('user/Dashboard');
-        }
-    } else {
-        return Inertia::render('Welcome', [
-            'canLogin' => Route::has('login'),
-            'canRegister' => Route::has('register'),
-            'laravelVersion' => Application::VERSION,
-            'phpVersion' => PHP_VERSION,
-        ]);
+    if (auth()->check() && auth()->user()->role->name === 'admin') {
+        return redirect()->route('admin.dashboard');
     }
-});
+
+    return Inertia::render('User/HomePage/Index');
+})->name('home');
 
 // Route::get('/dashboard', function () {
 //     return Inertia::render('Dashboard');
@@ -79,8 +70,18 @@ Route::get('/admin/dashboard', function () {
 })->middleware(['auth', 'verified', 'role:admin'])->name('admin.dashboard');
 
 Route::get('/user/dashboard', function () {
-    return Inertia::render('user/Dashboard');
+    return Inertia::render('User/Dashboard');
 })->middleware(['auth', 'verified', 'role:user'])->name('user.dashboard');
+
+Route::prefix('')->group(function () {
+    Route::get('/shop', fn () => Inertia::render('User/Shop/Index'))->name('shop');
+    Route::get('/cart', fn () => Inertia::render('User/Cart/Index'))->name('cart');
+    Route::get('/wishlist', fn () => Inertia::render('User/Wishlist/Index'))->name('wishlist');
+    Route::get('/categories', fn () => Inertia::render('User/Categories/Index'))->name('categories');
+    Route::get('/brand', fn () => Inertia::render('User/Brand/Index'))->name('brand');
+    Route::get('/about', fn () => Inertia::render('User/About/Index'))->name('about');
+    Route::get('/contact', fn () => Inertia::render('User/Contact/Index'))->name('contact');
+});
 
 Route::get('/admin/users/list', [UserController::class, 'list'])
     ->middleware(['auth', 'verified', 'role:admin']);

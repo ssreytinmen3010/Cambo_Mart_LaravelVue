@@ -1,30 +1,31 @@
 <script setup>
-import { useRoute, RouterLink } from "vue-router";
-import { computed } from "vue";
+import { computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
-  to: { type: [String, Object], required: true },
-  className: { type: String, default: "" },
-  activeClassName: { type: String, default: "text-blue-500 font-bold" },
-  exact: { type: Boolean, default: false }
+    href: { type: String, required: true },
+    activeClass: { type: String, default: 'text-primary font-semibold' },
+    inactiveClass: { type: String, default: '' },
+    exact: { type: Boolean, default: false },
 });
 
-const route = useRoute();
+const page = usePage();
 
 const isActive = computed(() => {
-  if (typeof props.to === "string") {
-    return props.exact ? route.path === props.to : route.path.startsWith(props.to);
-  }
-  return false;
+    const current = (page.url ?? '/').split('?')[0];
+
+    if (props.exact) {
+        return current === props.href;
+    }
+
+    return current === props.href || current.startsWith(`${props.href}/`);
 });
 
-const classes = computed(() => {
-  return props.className + (isActive.value ? ` ${props.activeClassName}` : "");
-});
+const classes = computed(() => (isActive.value ? props.activeClass : props.inactiveClass));
 </script>
 
 <template>
-  <RouterLink :to="to" :class="classes">
-    <slot />
-  </RouterLink>
+    <Link :href="href" :class="classes">
+        <slot />
+    </Link>
 </template>
