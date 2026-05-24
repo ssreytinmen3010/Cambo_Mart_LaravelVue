@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { X, Minus, Plus, ShoppingCart } from 'lucide-vue-next';
+import { router, usePage } from '@inertiajs/vue3';
+import { X, Minus, Plus, ShoppingCart, Star } from 'lucide-vue-next';
 import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
@@ -16,7 +17,8 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-const { addToCart, isInWishlist, toggleWishlist } = useStore();
+const page = usePage();
+const { addToCart, isInWishlist, toggleWishlist, rateProduct, myRatingsByProductId } = useStore();
 const qty = ref(1);
 
 const wished = computed(() => isInWishlist(props.product.id));
@@ -31,6 +33,15 @@ const discount = computed(() => {
     if (!props.product.oldPrice) return 0;
     return Math.round((1 - props.product.price / props.product.oldPrice) * 100);
 });
+
+const displayRating = computed(() => {
+    const mine = Number(myRatingsByProductId[props.product.id] ?? 0);
+    return mine > 0 ? mine : Math.round(props.product.rating ?? 0);
+});
+
+const myRating = computed(() => Number(myRatingsByProductId[props.product.id] ?? 0));
+const avgRatingText = computed(() => Number(props.product.rating ?? 0).toFixed(1));
+const reviewsCount = computed(() => Number(props.product.reviews ?? 0));
 
 watch(
     () => props.open,
@@ -47,14 +58,35 @@ function increaseQty() {
     qty.value += 1;
 }
 
-function handleAddToCart() {
-    if (!props.product.inStock) return;
-    addToCart(props.product, qty.value);
-    emit('close');
+async function setRating(value) {
+    try {
+        if (!page.props.auth?.user) return router.visit(route('login'));
+        await rateProduct(props.product.id, value);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Save rating failed:', e);
+    }
 }
 
-function handleWishlist() {
-    toggleWishlist(props.product.id);
+async function handleAddToCart() {
+    if (!props.product.inStock) return;
+    try {
+        await addToCart(props.product, qty.value);
+        emit('close');
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Add to cart failed:', e);
+    }
+}
+
+async function handleWishlist() {
+    try {
+        if (!page.props.auth?.user) return router.visit(route('login'));
+        await toggleWishlist(props.product.id);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Wishlist toggle failed:', e);
+    }
 }
 </script>
 
@@ -109,17 +141,25 @@ function handleWishlist() {
 
                         <div class="mt-2 flex items-center gap-2 flex-wrap">
                             <div class="flex items-center">
-                                <span
+                                <button
                                     v-for="i in 5"
                                     :key="i"
-                                    class="text-sm"
-                                    :class="i <= Math.round(product.rating) ? 'text-warning' : 'text-muted'"
+                                    type="button"
+                                    class="leading-none"
+                                    :class="i <= displayRating ? 'text-warning' : 'text-white/80 hover:text-white'"
+                                    :title="`Rate ${i} star${i > 1 ? 's' : ''}`"
+                                    @click.stop="setRating(i)"
                                 >
-                                    ⭐
-                                </span>
+                                    <Star
+                                        class="h-4 w-4"
+                                        :class="i <= displayRating ? 'fill-warning text-warning' : 'fill-transparent'"
+                                    />
+                                </button>
                             </div>
                             <span class="text-sm text-muted-foreground">
-                                {{ Number(product.rating).toFixed(1) }} · {{ product.reviews }} reviews
+                                {{ avgRatingText }} ·
+                                <span v-if="myRating > 0 && reviewsCount === 0">You rated {{ myRating }}/5</span>
+                                <span v-else>{{ reviewsCount }} {{ reviewsCount === 1 ? 'review' : 'reviews' }}</span>
                             </span>
                         </div>
 

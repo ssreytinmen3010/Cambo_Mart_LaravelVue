@@ -1,14 +1,18 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
+import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
     categories: { type: Array, default: () => [] },
     brands: { type: Array, default: () => [] },
     products: { type: Array, default: () => [] },
 });
+
+const page = usePage();
+const { loadMyRatings } = useStore();
 
 const categories = computed(() =>
     (props.categories || []).map((category) => ({
@@ -37,8 +41,8 @@ const products = computed(() =>
         price: Number(product.price ?? 0),
         oldPrice: null,
         image: product.image,
-        rating: 5,
-        reviews: 0,
+        rating: Number(product.rating ?? 0),
+        reviews: Number(product.reviews_count ?? 0),
         badge: product.status_stock || null,
         inStock: Number(product.stock ?? 0) > 0,
     })),
@@ -56,6 +60,12 @@ const filteredProducts = computed(() =>
 );
 
 const activeCategory = computed(() => categories.value.find((category) => category.id === activeCategoryId.value));
+
+onMounted(() => {
+    if (!page.props.auth?.user) return;
+    const ids = (props.products || []).map((p) => Number(p.id)).filter(Boolean);
+    loadMyRatings(ids);
+});
 </script>
 
 <template>

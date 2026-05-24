@@ -13,10 +13,14 @@ use App\Http\Controllers\AdminPanel\OrderController;
 use App\Http\Controllers\AdminPanel\ReviewController;
 use App\Http\Controllers\AdminPanel\LocationController;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\WishlistController;
+use App\Http\Controllers\User\ReviewController as UserReviewController;
 use App\Models\User;
 use App\Models\AdminPanel\Product;
 use App\Models\AdminPanel\Category;
 use App\Models\AdminPanel\Brand;
+use App\Models\AdminPanel\Review;
 use App\Http\Controllers\AdminPanel\SettingController;
 
 /*
@@ -45,6 +49,20 @@ Route::get('/', function () {
     $products = Product::query()
         ->where('status', 1)
         ->select(['id', 'name', 'image', 'product_code', 'price', 'stock', 'status_stock'])
+        ->selectSub(
+            Review::query()
+                ->selectRaw('COALESCE(AVG(rating_score), 0)')
+                ->whereColumn('product_id', 'products.id')
+                ->where('review_status', Review::STATUS_APPROVED),
+            'rating'
+        )
+        ->selectSub(
+            Review::query()
+                ->selectRaw('COUNT(*)')
+                ->whereColumn('product_id', 'products.id')
+                ->where('review_status', Review::STATUS_APPROVED),
+            'reviews_count'
+        )
         ->orderBy('name')
         ->limit(4)
         ->get();
@@ -90,6 +108,20 @@ Route::get('/user/dashboard', function () {
     return Inertia::render('User/Dashboard');
 })->middleware(['auth', 'verified', 'role:user'])->name('user.dashboard');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/user/cart', [CartController::class, 'show'])->name('user.cart.show');
+    Route::post('/user/cart/items', [CartController::class, 'addItem'])->name('user.cart.items.add');
+    Route::put('/user/cart/items/{cartItem}', [CartController::class, 'updateItem'])->name('user.cart.items.update');
+    Route::delete('/user/cart/items/{cartItem}', [CartController::class, 'removeItem'])->name('user.cart.items.remove');
+    Route::delete('/user/cart/clear', [CartController::class, 'clear'])->name('user.cart.clear');
+
+    Route::get('/user/wishlist', [WishlistController::class, 'index'])->name('user.wishlist.index');
+    Route::post('/user/wishlist/toggle', [WishlistController::class, 'toggle'])->name('user.wishlist.toggle');
+
+    Route::post('/user/reviews', [UserReviewController::class, 'store'])->name('user.reviews.store');
+    Route::get('/user/reviews/my', [UserReviewController::class, 'myRatings'])->name('user.reviews.my');
+});
+
 Route::prefix('')->group(function () {
     Route::get('/shop', function () {
         $categories = Category::query()
@@ -107,6 +139,20 @@ Route::prefix('')->group(function () {
         $products = Product::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
+            ->selectSub(
+                Review::query()
+                    ->selectRaw('COALESCE(AVG(rating_score), 0)')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('review_status', Review::STATUS_APPROVED),
+                'rating'
+            )
+            ->selectSub(
+                Review::query()
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('review_status', Review::STATUS_APPROVED),
+                'reviews_count'
+            )
             ->orderByDesc('created_at')
             ->get();
 
@@ -136,6 +182,20 @@ Route::prefix('')->group(function () {
         $products = Product::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
+            ->selectSub(
+                Review::query()
+                    ->selectRaw('COALESCE(AVG(rating_score), 0)')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('review_status', Review::STATUS_APPROVED),
+                'rating'
+            )
+            ->selectSub(
+                Review::query()
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('review_status', Review::STATUS_APPROVED),
+                'reviews_count'
+            )
             ->orderByDesc('created_at')
             ->limit(200)
             ->get();
@@ -156,6 +216,20 @@ Route::prefix('')->group(function () {
         $products = Product::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
+            ->selectSub(
+                Review::query()
+                    ->selectRaw('COALESCE(AVG(rating_score), 0)')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('review_status', Review::STATUS_APPROVED),
+                'rating'
+            )
+            ->selectSub(
+                Review::query()
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('review_status', Review::STATUS_APPROVED),
+                'reviews_count'
+            )
             ->orderByDesc('created_at')
             ->limit(200)
             ->get();

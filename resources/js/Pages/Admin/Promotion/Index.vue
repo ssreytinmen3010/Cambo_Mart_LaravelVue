@@ -18,11 +18,14 @@ const isEdit = ref(false);
 const showViewModal = ref(false);
 const viewItem = ref(null);
 const activeDropdown = ref(null);
+const fileInput = ref(null);
+const previewImage = ref(null);
 
 const form = useForm({
   id: null,
   code: "",
   name: "",
+  image: "",
   promo_type: "PERCENTAGE", // Default
   discount_value: "",
   product_id: "",
@@ -48,6 +51,7 @@ function openAddModal() {
   form.reset();
   form.status = 'DRAFT';
   form.promo_type = 'PERCENTAGE';
+  previewImage.value = null;
   showModal.value = true;
 }
 
@@ -56,6 +60,7 @@ function openEditModal(item) {
   form.id = item.id;
   form.code = item.code;
   form.name = item.name;
+  form.image = item.image || "";
   form.promo_type = item.type;
   form.discount_value = item.value;
   form.product_id = item.product_id || "";
@@ -64,12 +69,36 @@ function openEditModal(item) {
   form.status = item.status;
   form.start_date = item.start_date;
   form.end_date = item.end_date;
+  previewImage.value = item.image || null;
   showModal.value = true;
 }
 
 function openViewModal(item) {
   viewItem.value = item;
   showViewModal.value = true;
+}
+
+async function handleImageUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  previewImage.value = URL.createObjectURL(file);
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const axios = (await import('axios')).default;
+    const res = await axios.post('/upload-image', formData);
+    form.image = res.data.url;
+  } catch (error) {
+    alert("Upload failed");
+  }
+}
+
+function clearImage() {
+  previewImage.value = null;
+  form.image = "";
+  if (fileInput.value) fileInput.value.value = "";
 }
 
 function save() {
@@ -143,6 +172,7 @@ if (typeof window !== 'undefined') {
         <thead class="bg-slate-50">
           <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             <th class="px-6 py-3">Code / Name</th>
+            <th class="px-6 py-3">Image</th>
             <th class="px-6 py-3">Type</th>
             <th class="px-6 py-3">Value</th>
             <th class="px-6 py-3">Product Scope</th>
@@ -156,6 +186,14 @@ if (typeof window !== 'undefined') {
             <td class="px-6 py-4">
                <div class="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded inline-block mb-1">{{ p.code }}</div>
                <div class="text-sm font-bold text-slate-600">{{ p.name }}</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="w-16 h-16">
+                <img v-if="p.image" :src="p.image" :alt="p.name" class="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                <div v-else class="w-16 h-16 rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-300">
+                  <v-icon size="22">mdi-image-off-outline</v-icon>
+                </div>
+              </div>
             </td>
             <td class="px-6 py-4 text-xs font-bold text-slate-500">{{ p.type }}</td>
             <td class="px-6 py-4 text-sm font-bold text-green-600">
@@ -239,6 +277,26 @@ if (typeof window !== 'undefined') {
                    <input v-model="form.name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none"/>
                    <div v-if="form.errors.name" class="text-rose-500 text-[10px] ml-2 font-bold">{{ form.errors.name }}</div>
                 </div>
+             </div>
+
+             <div class="space-y-1">
+               <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Image (Optional)</label>
+               <div class="flex items-center gap-4">
+                 <div class="w-20 h-20 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center">
+                   <img v-if="previewImage" :src="previewImage" alt="Promotion image" class="w-full h-full object-cover" />
+                   <v-icon v-else size="26" class="text-slate-300">mdi-image-outline</v-icon>
+                 </div>
+                 <div class="flex items-center gap-2">
+                   <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleImageUpload" />
+                   <button type="button" @click="fileInput?.click()" class="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all">
+                     Upload
+                   </button>
+                   <button v-if="previewImage" type="button" @click="clearImage" class="px-4 py-2.5 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-black text-rose-600 hover:bg-rose-100 transition-all">
+                     Remove
+                   </button>
+                 </div>
+               </div>
+               <div v-if="form.errors.image" class="text-rose-500 text-[10px] ml-2 font-bold">{{ form.errors.image }}</div>
              </div>
 
              <div class="grid grid-cols-2 gap-3">
@@ -336,8 +394,11 @@ if (typeof window !== 'undefined') {
             <div class="space-y-6">
               <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                 <div class="flex items-center gap-4 mb-6">
-                  <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center">
-                    <v-icon size="32" class="text-emerald-600">mdi-tag-outline</v-icon>
+                  <div class="w-16 h-16 rounded-2xl border border-slate-200 bg-white overflow-hidden flex items-center justify-center shrink-0">
+                    <img v-if="viewItem?.image" :src="viewItem.image" :alt="viewItem?.name" class="w-full h-full object-cover" />
+                    <div v-else class="w-full h-full bg-emerald-100 flex items-center justify-center">
+                      <v-icon size="32" class="text-emerald-600">mdi-tag-outline</v-icon>
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mb-1">{{ viewItem?.code }}</div>

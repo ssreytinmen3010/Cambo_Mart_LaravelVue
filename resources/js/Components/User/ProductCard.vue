@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { ShoppingCart } from 'lucide-vue-next';
+import { router, usePage } from '@inertiajs/vue3';
+import { ShoppingCart, Star } from 'lucide-vue-next';
 import QuickViewModal from '@/Components/User/QuickViewModal.vue';
 import { useStore } from '@/composables/useStore';
 
@@ -11,7 +12,8 @@ const props = defineProps({
     },
 });
 
-const { addToCart, isInWishlist, toggleWishlist } = useStore();
+const page = usePage();
+const { addToCart, isInWishlist, toggleWishlist, rateProduct, myRatingsByProductId } = useStore();
 const detailOpen = ref(false);
 
 const wished = computed(() => isInWishlist(props.product.id));
@@ -21,8 +23,46 @@ const discount = computed(() => {
     return Math.round((1 - props.product.price / props.product.oldPrice) * 100);
 });
 
+const displayRating = computed(() => {
+    const mine = Number(myRatingsByProductId[props.product.id] ?? 0);
+    return mine > 0 ? mine : Math.round(props.product.rating ?? 0);
+});
+
+const myRating = computed(() => Number(myRatingsByProductId[props.product.id] ?? 0));
+const avgRatingText = computed(() => Number(props.product.rating ?? 0).toFixed(1));
+const reviewsCount = computed(() => Number(props.product.reviews ?? 0));
+
 function openDetail() {
     detailOpen.value = true;
+}
+
+async function handleAddToCart() {
+    try {
+        await addToCart(props.product, 1);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Add to cart failed:', e);
+    }
+}
+
+async function setRating(value) {
+    try {
+        if (!page.props.auth?.user) return router.visit(route('login'));
+        await rateProduct(props.product.id, value);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Save rating failed:', e);
+    }
+}
+
+async function handleWishlist() {
+    try {
+        if (!page.props.auth?.user) return router.visit(route('login'));
+        await toggleWishlist(props.product.id);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Wishlist toggle failed:', e);
+    }
 }
 </script>
 
@@ -75,7 +115,7 @@ function openDetail() {
                                 ? '!bg-destructive !text-white !border-destructive'
                                 : 'hover:bg-primary hover:text-primary-foreground hover:border-primary',
                         ]"
-                        @click.stop="toggleWishlist(product.id)"
+                        @click.stop="handleWishlist"
                     >
                         <span class="text-base leading-none" aria-hidden="true">❤️</span>
                     </button>
@@ -103,7 +143,7 @@ function openDetail() {
                     type="button"
                     :disabled="!product.inStock"
                     class="product-card-cart absolute bottom-3 left-3 right-3 z-20 h-10 rounded-full bg-foreground text-background text-sm font-medium flex items-center justify-center gap-2 translate-y-[120%] group-hover:translate-y-0 transition-transform duration-300 hover:bg-primary disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed pointer-events-auto"
-                    @click.stop="addToCart(product)"
+                    @click.stop="handleAddToCart"
                 >
                     <ShoppingCart class="h-4 w-4" />
                     Add to cart
@@ -129,16 +169,25 @@ function openDetail() {
 
                 <div class="mt-2 flex items-center gap-1 text-xs">
                     <div class="flex items-center">
-                        <span
+                        <button
                             v-for="i in 5"
                             :key="i"
-                            :class="i <= Math.round(product.rating) ? 'text-warning' : 'text-muted'"
+                            type="button"
+                            class="leading-none"
+                            :class="i <= displayRating ? 'text-warning' : 'text-white/80 hover:text-white'"
+                            :title="`Rate ${i} star${i > 1 ? 's' : ''}`"
+                            @click.stop="setRating(i)"
                         >
-                            ⭐
-                        </span>
+                            <Star
+                                class="h-3.5 w-3.5"
+                                :class="i <= displayRating ? 'fill-warning text-warning' : 'fill-transparent'"
+                            />
+                        </button>
                     </div>
                     <span class="text-muted-foreground">
-                        {{ Number(product.rating).toFixed(1) }} · {{ product.reviews }} reviews
+                        {{ avgRatingText }} ·
+                        <span v-if="myRating > 0 && reviewsCount === 0">You rated {{ myRating }}/5</span>
+                        <span v-else>{{ reviewsCount }} {{ reviewsCount === 1 ? 'review' : 'reviews' }}</span>
                     </span>
                 </div>
 

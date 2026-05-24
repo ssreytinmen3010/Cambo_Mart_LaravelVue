@@ -1,12 +1,16 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { CreditCard, Truck, Wallet, CheckCircle2, ShieldCheck } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
 
-const { cart, cartTotal, clearCart } = useStore();
+const { cart, cartTotal, clearCart, ensureCartLoaded } = useStore();
+
+onMounted(() => {
+    ensureCartLoaded();
+});
 
 const method = ref('card');
 const placing = ref(false);

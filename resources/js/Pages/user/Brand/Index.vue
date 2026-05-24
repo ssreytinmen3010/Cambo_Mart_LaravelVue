@@ -1,13 +1,17 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
+import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
     brands: { type: Array, default: () => [] },
     products: { type: Array, default: () => [] },
 });
+
+const page = usePage();
+const { loadMyRatings } = useStore();
 
 const brands = computed(() =>
     (props.brands || []).map((brand) => ({
@@ -33,8 +37,8 @@ const products = computed(() =>
         })(),
         oldPrice: product.promotion?.promo_type === 'PERCENTAGE' ? Number(product.price ?? 0) : null,
         image: product.image,
-        rating: 5,
-        reviews: 0,
+        rating: Number(product.rating ?? 0),
+        reviews: Number(product.reviews_count ?? 0),
         badge:
             product.promotion?.promo_type === 'PERCENTAGE'
                 ? 'Sale'
@@ -52,6 +56,12 @@ const filteredProducts = computed(() =>
 );
 
 const activeBrand = computed(() => brands.value.find((brand) => brand.id === activeBrandId.value));
+
+onMounted(() => {
+    if (!page.props.auth?.user) return;
+    const ids = (props.products || []).map((p) => Number(p.id)).filter(Boolean);
+    loadMyRatings(ids);
+});
 </script>
 
 <template>

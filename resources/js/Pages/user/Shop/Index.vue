@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
+import { Head, usePage } from '@inertiajs/vue3';
 import { Filter, Star, X } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
+import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
     categories: {
@@ -29,6 +30,9 @@ const minRating = ref(0);
 const maxPrice = ref(60);
 const sort = ref('newest');
 const filtersOpen = ref(false);
+
+const page = usePage();
+const { loadMyRatings } = useStore();
 
 function toggleInArray(list, id) {
     const index = list.indexOf(id);
@@ -76,8 +80,8 @@ const products = computed(() =>
         oldPrice: null,
         badge: product.status_stock || null,
         inStock: Number(product.stock ?? 0) > 0,
-        rating: 5,
-        reviews: 0,
+        rating: Number(product.rating ?? 0),
+        reviews: Number(product.reviews_count ?? 0),
         createdAt: product.created_at,
     }))
 );
@@ -99,6 +103,12 @@ const filteredProducts = computed(() => {
     if (sort.value === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));
 
     return list;
+});
+
+onMounted(() => {
+    if (!page.props.auth?.user) return;
+    const ids = (props.products || []).map((p) => Number(p.id)).filter(Boolean);
+    loadMyRatings(ids);
 });
 </script>
 

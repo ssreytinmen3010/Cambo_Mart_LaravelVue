@@ -42,6 +42,7 @@ class PromotionController extends Controller
                 'id' => $promo->id,
                 'code' => $promo->code,
                 'name' => $promo->name,
+                'image' => $promo->image,
                 'description' => $promo->description,
                 'type' => $promo->promo_type,
                 'value' => $promo->discount_value,
@@ -78,6 +79,7 @@ class PromotionController extends Controller
         $request->validate([
             'code' => 'required|string|unique:promotions,code|max:50',
             'name' => 'required|string|max:255',
+            'image' => 'nullable|string|max:2048',
             'promo_type' => 'required|in:PERCENTAGE,BOGO',
             'discount_value' => 'required_if:promo_type,PERCENTAGE|nullable|numeric|min:0',
             'buy_qty' => 'required_if:promo_type,BOGO|nullable|integer|min:1',
@@ -106,6 +108,7 @@ class PromotionController extends Controller
         $request->validate([
             'code' => ['required', 'string', 'max:50', Rule::unique('promotions')->ignore($promotion->id)],
             'name' => 'required|string|max:255',
+            'image' => 'nullable|string|max:2048',
             'promo_type' => 'required|in:PERCENTAGE,BOGO',
             'discount_value' => 'required_if:promo_type,PERCENTAGE|nullable|numeric|min:0',
             'buy_qty' => 'required_if:promo_type,BOGO|nullable|integer|min:1',

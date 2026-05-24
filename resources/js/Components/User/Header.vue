@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useActivePath } from '@/composables/useActivePath';
 import { useStore } from '@/composables/useStore';
@@ -7,10 +7,29 @@ import defaultLogo from '@img/Logo.png';
 
 const mobileOpen = ref(false);
 const dropdownOpen = ref(false);
-const { cartCount, wishlist } = useStore();
+const { cartCount, wishlist, ensureCartLoaded, ensureWishlistLoaded, setCurrentUser } = useStore();
 
 const page = usePage();
 const { isActive } = useActivePath();
+
+onMounted(() => {
+    setCurrentUser(page.props.auth?.user?.id ?? null);
+    if (page.props.auth?.user) {
+        ensureCartLoaded();
+        ensureWishlistLoaded();
+    }
+});
+
+watch(
+    () => page.props.auth?.user?.id ?? null,
+    (newUserId) => {
+        setCurrentUser(newUserId);
+        if (newUserId) {
+            ensureCartLoaded();
+            ensureWishlistLoaded();
+        }
+    },
+);
 
 if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console

@@ -1,8 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
+import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
     categories: {
@@ -16,6 +17,8 @@ const props = defineProps({
 });
 
 const currentIndex = ref(0);
+const page = usePage();
+const { loadMyRatings } = useStore();
 
 const promotions = ref([
     {
@@ -72,8 +75,8 @@ const featuredProducts = computed(() =>
                   ? 'BOGO'
                   : product.status_stock || null,
         inStock: Number(product.stock ?? 0) > 0,
-        rating: 5,
-        reviews: 0,
+        rating: Number(product.rating ?? 0),
+        reviews: Number(product.reviews_count ?? 0),
     }))
 );
 
@@ -83,6 +86,11 @@ onMounted(() => {
     interval = setInterval(() => {
         currentIndex.value = (currentIndex.value + 1) % promotions.value.length;
     }, 5000);
+
+    if (page.props.auth?.user) {
+        const ids = (props.products || []).map((p) => Number(p.id)).filter(Boolean);
+        loadMyRatings(ids);
+    }
 });
 
 onUnmounted(() => {

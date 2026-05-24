@@ -1,12 +1,16 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ShoppingBag, Minus, Plus, Trash2, ArrowRight } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
 
-const { cart, removeFromCart, updateQty, clearCart, cartTotal } = useStore();
+const { cart, removeFromCart, updateQty, clearCart, cartTotal, ensureCartLoaded } = useStore();
+
+onMounted(() => {
+    ensureCartLoaded();
+});
 
 const shipping = computed(() => (cartTotal.value > 25 || cartTotal.value === 0 ? 0 : 3.5));
 const tax = computed(() => cartTotal.value * 0.05);

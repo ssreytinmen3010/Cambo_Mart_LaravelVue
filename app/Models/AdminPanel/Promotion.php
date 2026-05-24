@@ -18,6 +18,7 @@ class Promotion extends Model
     protected $fillable = [
         'code',
         'name',
+        'image',
         'product_id',
         'promo_type',
         'discount_value',
