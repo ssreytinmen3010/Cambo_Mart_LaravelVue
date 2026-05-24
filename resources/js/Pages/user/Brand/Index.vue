@@ -4,121 +4,54 @@ import { Head, Link } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
 
-const brands = [
-    { id: 'fresh-farms', name: 'Fresh Farms', logo: '🥬' },
-    { id: 'mekong-fruit', name: 'Mekong Fruit', logo: '🥭' },
-    { id: 'phnom-bakery', name: 'Phnom Bakery', logo: '🍞' },
-    { id: 'dairy-house', name: 'Dairy House', logo: '🥛' },
-    { id: 'angkor-spice', name: 'Angkor Spice', logo: '🌶️' },
-    { id: 'kiri-water', name: 'Kiri Water', logo: '💧' },
-    { id: 'kampot-pepper', name: 'Kampot Pepper', logo: '🧂' },
-    { id: 'local-honey', name: 'Local Honey', logo: '🍯' },
-];
+const props = defineProps({
+    brands: { type: Array, default: () => [] },
+    products: { type: Array, default: () => [] },
+});
 
-const products = [
-    {
-        id: 101,
-        brand: 'mekong-fruit',
-        name: 'Organic Cambodian Mango',
-        code: 'FRU-001',
-        price: 4.99,
-        oldPrice: 6.99,
-        image: 'https://images.unsplash.com/photo-1553279768-865021837e9b',
-        rating: 4.8,
-        reviews: 124,
-        badge: 'Sale',
-        inStock: true,
-    },
-    {
-        id: 102,
-        brand: 'fresh-farms',
-        name: 'Fresh Morning Glory',
-        code: 'VEG-012',
-        price: 1.49,
-        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999',
-        rating: 4.5,
-        reviews: 89,
-        badge: 'New',
-        inStock: true,
-    },
-    {
-        id: 103,
-        brand: 'dairy-house',
-        name: 'Farm Eggs (12 pack)',
-        code: 'DAI-008',
-        price: 3.25,
-        image: 'https://images.unsplash.com/photo-1582722872405-2c03e42f8d83',
-        rating: 4.9,
-        reviews: 210,
-        badge: 'Hot',
-        inStock: true,
-    },
-    {
-        id: 104,
-        brand: 'phnom-bakery',
-        name: 'Artisan Sourdough Loaf',
-        code: 'BAK-003',
-        price: 5.5,
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff',
-        rating: 4.6,
-        reviews: 67,
-        inStock: false,
-    },
-    {
-        id: 105,
-        brand: 'angkor-spice',
-        name: 'Lemongrass Spice Mix',
-        code: 'SPI-021',
-        price: 2.75,
-        image: 'https://images.unsplash.com/photo-1604908812840-7bcd84e8aa3f',
-        rating: 4.4,
-        reviews: 52,
-        badge: 'New',
-        inStock: true,
-    },
-    {
-        id: 106,
-        brand: 'kampot-pepper',
-        name: 'Kampot Black Pepper (100g)',
-        code: 'SPI-010',
-        price: 6.2,
-        oldPrice: 7.5,
-        image: 'https://images.unsplash.com/photo-1624388992148-24d069740cf5',
-        rating: 4.9,
-        reviews: 178,
-        badge: 'Sale',
-        inStock: true,
-    },
-    {
-        id: 107,
-        brand: 'kiri-water',
-        name: 'Natural Mineral Water (1.5L)',
-        code: 'WAT-001',
-        price: 0.85,
-        image: 'https://images.unsplash.com/photo-1526401485004-2aa7d4a3b70a',
-        rating: 4.2,
-        reviews: 31,
-        inStock: true,
-    },
-    {
-        id: 108,
-        brand: 'local-honey',
-        name: 'Raw Wildflower Honey (250g)',
-        code: 'HON-004',
-        price: 8.9,
-        image: 'https://images.unsplash.com/photo-1514996937319-344454492b37',
-        rating: 4.7,
-        reviews: 95,
-        badge: 'Hot',
-        inStock: true,
-    },
-];
+const brands = computed(() =>
+    (props.brands || []).map((brand) => ({
+        ...brand,
+        id: Number(brand.id),
+        logo: '🏷️',
+    })),
+);
 
-const activeBrandId = ref(brands[0]?.id ?? '');
+const products = computed(() =>
+    (props.products || []).map((product) => ({
+        id: product.id,
+        brand: Number(product.brand_id),
+        name: product.name,
+        code: product.product_code,
+        price: (() => {
+            const basePrice = Number(product.price ?? 0);
+            if (product.promotion?.promo_type === 'PERCENTAGE') {
+                const discount = Number(product.promotion.discount_value ?? 0);
+                return Math.max(0, Number((basePrice * (1 - discount / 100)).toFixed(2)));
+            }
+            return basePrice;
+        })(),
+        oldPrice: product.promotion?.promo_type === 'PERCENTAGE' ? Number(product.price ?? 0) : null,
+        image: product.image,
+        rating: 5,
+        reviews: 0,
+        badge:
+            product.promotion?.promo_type === 'PERCENTAGE'
+                ? 'Sale'
+                : product.promotion?.promo_type === 'BOGO'
+                  ? 'BOGO'
+                  : product.status_stock || null,
+        inStock: Number(product.stock ?? 0) > 0,
+    })),
+);
 
-const filteredProducts = computed(() => products.filter((product) => product.brand === activeBrandId.value));
+const activeBrandId = ref(brands.value[0]?.id ?? null);
 
-const activeBrand = computed(() => brands.find((brand) => brand.id === activeBrandId.value));
+const filteredProducts = computed(() =>
+    products.value.filter((product) => (!activeBrandId.value ? true : product.brand === activeBrandId.value)),
+);
+
+const activeBrand = computed(() => brands.value.find((brand) => brand.id === activeBrandId.value));
 </script>
 
 <template>
@@ -153,7 +86,14 @@ const activeBrand = computed(() => brands.find((brand) => brand.id === activeBra
                     "
                     @click="activeBrandId = brand.id"
                 >
-                    <div class="text-3xl">{{ brand.logo }}</div>
+                    <img
+                        v-if="brand.image"
+                        :src="brand.image"
+                        :alt="brand.name"
+                        class="h-10 w-10 object-contain"
+                        loading="lazy"
+                    />
+                    <div v-else class="text-3xl">{{ brand.logo }}</div>
                     <p class="text-xs font-semibold text-center px-2">{{ brand.name }}</p>
                 </button>
             </div>

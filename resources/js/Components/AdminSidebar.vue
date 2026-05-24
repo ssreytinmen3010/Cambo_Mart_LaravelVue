@@ -10,9 +10,10 @@
       <div class="flex items-center gap-3">
         <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-tr from-slate-100 to-white rounded-2xl shadow-xl border border-white">
           <img 
-            :src="storeLogo || '@img/Logo.png'" 
+            :src="storeLogoUrl" 
             :alt="storeName + ' Logo'" 
             class="w-18 h-18 min-w-[72px] z-10 object-contain drop-shadow-xl transform hover:scale-110 transition-transform duration-300" 
+            @error="onLogoError"
           />
           <div class="absolute inset-0 bg-white/40 blur-xl rounded-full"></div>
         </div>
@@ -80,6 +81,7 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
+import defaultLogo from '@img/Logo.png';
 
 const props = defineProps({
   collapsed: Boolean,
@@ -89,6 +91,35 @@ const page = usePage();
 const settings = computed(() => page.props.appSettings || {});
 const storeName = computed(() => settings.value.store_name || 'CamboMart');
 const storeLogo = computed(() => settings.value.logo);
+
+function normalizeLogoUrl(logo) {
+  if (!logo || typeof logo !== 'string') return null;
+  const value = logo.trim().replaceAll('\\', '/');
+  if (!value) return null;
+
+  if (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('data:') ||
+    value.startsWith('blob:')
+  ) {
+    return value;
+  }
+
+  if (value.startsWith('/')) return value;
+
+  if (value.startsWith('uploads/')) return `/storage/${value}`;
+  if (value.startsWith('public/uploads/')) return `/storage/${value.replace(/^public\//, '')}`;
+  if (value.startsWith('storage/')) return `/${value}`;
+
+  return `/${value}`;
+}
+
+const storeLogoUrl = computed(() => normalizeLogoUrl(storeLogo.value) || defaultLogo);
+
+function onLogoError(event) {
+  if (event?.target) event.target.src = defaultLogo;
+}
 
 // Split store name for styling (e.g., "CamboMart" -> "Cambo" + "Mart")
 const storeNameParts = computed(() => {

@@ -13,7 +13,13 @@ class Category extends Model
         'image',
         'description',
         'brand_id',
+        'qty_item',
         'status',
+    ];
+
+    protected $casts = [
+        'qty_item' => 'integer',
+        'status' => 'boolean',
     ];
 
     public function getStatusAttribute($value)

@@ -35,7 +35,24 @@ Route::get('/', function () {
         return redirect()->route('admin.dashboard');
     }
 
-    return Inertia::render('User/HomePage/Index');
+    $categories = Category::query()
+        ->where('status', 1)
+        ->select(['id', 'name', 'image', 'qty_item'])
+        ->orderBy('name')
+        ->limit(8)
+        ->get();
+
+    $products = Product::query()
+        ->where('status', 1)
+        ->select(['id', 'name', 'image', 'product_code', 'price', 'stock', 'status_stock'])
+        ->orderBy('name')
+        ->limit(4)
+        ->get();
+
+    return Inertia::render('User/HomePage/Index', [
+        'categories' => $categories,
+        'products' => $products,
+    ]);
 })->name('home');
 
 // Route::get('/dashboard', function () {
@@ -74,13 +91,80 @@ Route::get('/user/dashboard', function () {
 })->middleware(['auth', 'verified', 'role:user'])->name('user.dashboard');
 
 Route::prefix('')->group(function () {
-    Route::get('/shop', fn () => Inertia::render('User/Shop/Index'))->name('shop');
+    Route::get('/shop', function () {
+        $categories = Category::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image', 'qty_item'])
+            ->orderBy('name')
+            ->get();
+
+        $brands = Brand::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image'])
+            ->orderBy('name')
+            ->get();
+
+        $products = Product::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return Inertia::render('User/Shop/Index', [
+            'categories' => $categories,
+            'brands' => $brands,
+            'products' => $products,
+        ]);
+    })->name('shop');
     Route::get('/cart', fn () => Inertia::render('User/Cart/Index'))->name('cart');
     Route::get('/checkout', fn () => Inertia::render('User/Checkout/Index'))->name('checkout');
     Route::get('/wishlist', fn () => Inertia::render('User/Wishlist/Index'))->name('wishlist');
     Route::get('/account', fn () => Inertia::render('User/Profile/Index'))->name('user.profile');
-    Route::get('/categories', fn () => Inertia::render('User/Categories/Index'))->name('categories');
-    Route::get('/brand', fn () => Inertia::render('User/Brand/Index'))->name('brand');
+    Route::get('/categories', function () {
+        $categories = Category::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image', 'qty_item'])
+            ->orderBy('name')
+            ->get();
+
+        $brands = Brand::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image'])
+            ->orderBy('name')
+            ->get();
+
+        $products = Product::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
+            ->orderByDesc('created_at')
+            ->limit(200)
+            ->get();
+
+        return Inertia::render('User/Categories/Index', [
+            'categories' => $categories,
+            'brands' => $brands,
+            'products' => $products,
+        ]);
+    })->name('categories');
+    Route::get('/brand', function () {
+        $brands = Brand::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image'])
+            ->orderBy('name')
+            ->get();
+
+        $products = Product::query()
+            ->where('status', 1)
+            ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
+            ->orderByDesc('created_at')
+            ->limit(200)
+            ->get();
+
+        return Inertia::render('User/Brand/Index', [
+            'brands' => $brands,
+            'products' => $products,
+        ]);
+    })->name('brand');
     Route::get('/about', fn () => Inertia::render('User/About/Index'))->name('about');
     Route::get('/contact', fn () => Inertia::render('User/Contact/Index'))->name('contact');
     Route::redirect('/root', '/')->name('root');

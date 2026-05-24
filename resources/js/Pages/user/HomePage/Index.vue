@@ -3,7 +3,17 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
-import { products } from '@/lib/mock-data';
+
+const props = defineProps({
+    categories: {
+        type: Array,
+        default: () => [],
+    },
+    products: {
+        type: Array,
+        default: () => [],
+    },
+});
 
 const currentIndex = ref(0);
 
@@ -24,36 +34,14 @@ const promotions = ref([
 
 const currentPromotion = computed(() => promotions.value[currentIndex.value]);
 
-const categories = ref([
-    {
-        id: 1,
-        name: 'Vegetables',
-        icon: '🥦',
-        count: 120,
-        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e',
-    },
-    {
-        id: 2,
-        name: 'Fruits',
-        icon: '🍎',
-        count: 90,
-        image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b',
-    },
-    {
-        id: 3,
-        name: 'Dairy',
-        icon: '🥛',
-        count: 45,
-        image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da',
-    },
-    {
-        id: 4,
-        name: 'Bakery',
-        icon: '🍞',
-        count: 60,
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff',
-    },
-]);
+const categories = computed(() =>
+    (props.categories || []).map((category) => ({
+        ...category,
+        // UI expects `count` + `icon`
+        count: Number(category.qty_item ?? 0),
+        icon: '🛍️',
+    }))
+);
 
 const features = ref([
     { icon: '🚚', title: 'Free Delivery', desc: 'On orders over $25' },
@@ -62,7 +50,32 @@ const features = ref([
     { icon: '🎧', title: '24/7 Support', desc: 'Always here for you' },
 ]);
 
-const featuredProducts = products.slice(0, 4);
+const featuredProducts = computed(() =>
+    (props.products || []).map((product) => ({
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        code: product.product_code,
+        price: (() => {
+            const basePrice = Number(product.price ?? 0);
+            if (product.promotion?.promo_type === 'PERCENTAGE') {
+                const discount = Number(product.promotion.discount_value ?? 0);
+                return Math.max(0, Number((basePrice * (1 - discount / 100)).toFixed(2)));
+            }
+            return basePrice;
+        })(),
+        oldPrice: product.promotion?.promo_type === 'PERCENTAGE' ? Number(product.price ?? 0) : null,
+        badge:
+            product.promotion?.promo_type === 'PERCENTAGE'
+                ? 'Sale'
+                : product.promotion?.promo_type === 'BOGO'
+                  ? 'BOGO'
+                  : product.status_stock || null,
+        inStock: Number(product.stock ?? 0) > 0,
+        rating: 5,
+        reviews: 0,
+    }))
+);
 
 let interval = null;
 
@@ -178,15 +191,17 @@ onUnmounted(() => {
                     >
                         <div class="aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-primary-soft to-secondary relative border border-border/60">
                             <img
+                                v-if="category.image"
                                 :src="category.image"
                                 :alt="category.name"
                                 class="absolute inset-0 h-full w-full object-cover opacity-60"
+                                loading="lazy"
                             />
 
                             <div class="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
 
                             <div class="absolute bottom-0 inset-x-0 p-3">
-                                <div class="text-2xl mb-1">{{ category.icon }}</div>
+                                <!-- <div class="text-2xl mb-1">{{ category.icon }}</div> -->
                                 <p class="text-sm font-semibold">{{ category.name }}</p>
                                 <p class="text-[10px] text-muted-foreground">{{ category.count }} items</p>
                             </div>
@@ -238,7 +253,3 @@ onUnmounted(() => {
         </div>
     </UserLayout>
 </template>
-
-</script>
-</script>
-</script>

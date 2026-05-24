@@ -64,7 +64,7 @@ function openDetail() {
                     </span>
                 </div>
 
-                <div class="absolute top-3 right-3 z-20 flex flex-col gap-2 pointer-events-auto">
+                <div v-if="product.inStock" class="absolute top-3 right-3 z-20 flex flex-col gap-2 pointer-events-auto">
                     <button
                         type="button"
                         :title="wished ? 'Remove from wishlist' : 'Add to wishlist'"

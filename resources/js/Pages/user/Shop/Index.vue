@@ -5,7 +5,21 @@ import { Filter, Star, X } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
-import { categories, brands, products } from '@/lib/mock-data';
+
+const props = defineProps({
+    categories: {
+        type: Array,
+        default: () => [],
+    },
+    brands: {
+        type: Array,
+        default: () => [],
+    },
+    products: {
+        type: Array,
+        default: () => [],
+    },
+});
 
 const activeCats = ref([]);
 const activeBrands = ref([]);
@@ -34,8 +48,42 @@ function resetFilters() {
     maxPrice.value = 60;
 }
 
+const categories = computed(() =>
+    (props.categories || []).map((category) => ({
+        ...category,
+        id: Number(category.id),
+        count: Number(category.qty_item ?? 0),
+    }))
+);
+
+const brands = computed(() =>
+    (props.brands || []).map((brand) => ({
+        ...brand,
+        id: Number(brand.id),
+        logo: '🏷️',
+    }))
+);
+
+const products = computed(() =>
+    (props.products || []).map((product) => ({
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        code: product.product_code,
+        category: Number(product.category_id),
+        brand: Number(product.brand_id),
+        price: Number(product.price ?? 0),
+        oldPrice: null,
+        badge: product.status_stock || null,
+        inStock: Number(product.stock ?? 0) > 0,
+        rating: 5,
+        reviews: 0,
+        createdAt: product.created_at,
+    }))
+);
+
 const filteredProducts = computed(() => {
-    let list = products.filter((p) => {
+    let list = products.value.filter((p) => {
         if (activeCats.value.length && !activeCats.value.includes(p.category)) return false;
         if (activeBrands.value.length && !activeBrands.value.includes(p.brand)) return false;
         if (inStockOnly.value && !p.inStock) return false;
@@ -45,6 +93,7 @@ const filteredProducts = computed(() => {
         return true;
     });
 
+    if (sort.value === 'newest') list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (sort.value === 'low') list = [...list].sort((a, b) => a.price - b.price);
     if (sort.value === 'high') list = [...list].sort((a, b) => b.price - a.price);
     if (sort.value === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));

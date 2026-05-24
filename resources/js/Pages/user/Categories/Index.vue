@@ -4,195 +4,58 @@ import { Head, Link } from '@inertiajs/vue3';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
 
-const categories = [
-    {
-        id: 1,
-        name: 'Vegetables',
-        icon: '🥦',
-        count: 120,
-        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e',
-    },
-    {
-        id: 2,
-        name: 'Fruits',
-        icon: '🍎',
-        count: 90,
-        image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b',
-    },
-    {
-        id: 3,
-        name: 'Dairy',
-        icon: '🥛',
-        count: 45,
-        image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da',
-    },
-    {
-        id: 4,
-        name: 'Bakery',
-        icon: '🍞',
-        count: 60,
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff',
-    },
-    {
-        id: 5,
-        name: 'Spices',
-        icon: '🌶️',
-        count: 30,
-        image: 'https://images.unsplash.com/photo-1604908812840-7bcd84e8aa3f',
-    },
-    {
-        id: 6,
-        name: 'Drinks',
-        icon: '💧',
-        count: 40,
-        image: 'https://images.unsplash.com/photo-1526401485004-2aa7d4a3b70a',
-    },
-    {
-        id: 7,
-        name: 'Pantry',
-        icon: '🫙',
-        count: 55,
-        image: 'https://images.unsplash.com/photo-1604909054203-3d5dd01cf15d',
-    },
-    {
-        id: 8,
-        name: 'Household',
-        icon: '🧻',
-        count: 25,
-        image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f',
-    },
-];
+const props = defineProps({
+    categories: { type: Array, default: () => [] },
+    brands: { type: Array, default: () => [] },
+    products: { type: Array, default: () => [] },
+});
 
-const brands = [
-    { id: 'fresh-farms', name: 'Fresh Farms', logo: '🥬' },
-    { id: 'mekong-fruit', name: 'Mekong Fruit', logo: '🥭' },
-    { id: 'phnom-bakery', name: 'Phnom Bakery', logo: '🍞' },
-    { id: 'dairy-house', name: 'Dairy House', logo: '🥛' },
-    { id: 'angkor-spice', name: 'Angkor Spice', logo: '🌶️' },
-    { id: 'kiri-water', name: 'Kiri Water', logo: '💧' },
-    { id: 'kampot-pepper', name: 'Kampot Pepper', logo: '🧂' },
-    { id: 'local-honey', name: 'Local Honey', logo: '🍯' },
-];
+const categories = computed(() =>
+    (props.categories || []).map((category) => ({
+        ...category,
+        id: Number(category.id),
+        count: Number(category.qty_item ?? 0),
+        icon: '🛍️',
+    })),
+);
 
-const products = [
-    {
-        id: 101,
-        category: 2,
-        brand: 'mekong-fruit',
-        name: 'Organic Cambodian Mango',
-        code: 'FRU-001',
-        price: 4.99,
-        oldPrice: 6.99,
-        image: 'https://images.unsplash.com/photo-1553279768-865021837e9b',
-        rating: 4.8,
-        reviews: 124,
-        badge: 'Sale',
-        inStock: true,
-    },
-    {
-        id: 102,
-        category: 1,
-        brand: 'fresh-farms',
-        name: 'Fresh Morning Glory',
-        code: 'VEG-012',
-        price: 1.49,
-        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999',
-        rating: 4.5,
-        reviews: 89,
-        badge: 'New',
-        inStock: true,
-    },
-    {
-        id: 103,
-        category: 3,
-        brand: 'dairy-house',
-        name: 'Farm Eggs (12 pack)',
-        code: 'DAI-008',
-        price: 3.25,
-        image: 'https://images.unsplash.com/photo-1582722872405-2c03e42f8d83',
-        rating: 4.9,
-        reviews: 210,
-        badge: 'Hot',
-        inStock: true,
-    },
-    {
-        id: 104,
-        category: 4,
-        brand: 'phnom-bakery',
-        name: 'Artisan Sourdough Loaf',
-        code: 'BAK-003',
-        price: 5.5,
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff',
-        rating: 4.6,
-        reviews: 67,
-        inStock: false,
-    },
-    {
-        id: 105,
-        category: 5,
-        brand: 'angkor-spice',
-        name: 'Lemongrass Spice Mix',
-        code: 'SPI-021',
-        price: 2.75,
-        image: 'https://images.unsplash.com/photo-1604908812840-7bcd84e8aa3f',
-        rating: 4.4,
-        reviews: 52,
-        badge: 'New',
-        inStock: true,
-    },
-    {
-        id: 106,
-        category: 5,
-        brand: 'kampot-pepper',
-        name: 'Kampot Black Pepper (100g)',
-        code: 'SPI-010',
-        price: 6.2,
-        oldPrice: 7.5,
-        image: 'https://images.unsplash.com/photo-1624388992148-24d069740cf5',
-        rating: 4.9,
-        reviews: 178,
-        badge: 'Sale',
-        inStock: true,
-    },
-    {
-        id: 107,
-        category: 6,
-        brand: 'kiri-water',
-        name: 'Natural Mineral Water (1.5L)',
-        code: 'WAT-001',
-        price: 0.85,
-        image: 'https://images.unsplash.com/photo-1526401485004-2aa7d4a3b70a',
-        rating: 4.2,
-        reviews: 31,
-        inStock: true,
-    },
-    {
-        id: 108,
-        category: 7,
-        brand: 'local-honey',
-        name: 'Raw Wildflower Honey (250g)',
-        code: 'HON-004',
-        price: 8.9,
-        image: 'https://images.unsplash.com/photo-1514996937319-344454492b37',
-        rating: 4.7,
-        reviews: 95,
-        badge: 'Hot',
-        inStock: true,
-    },
-];
+const brands = computed(() =>
+    (props.brands || []).map((brand) => ({
+        ...brand,
+        id: Number(brand.id),
+        logo: '🏷️',
+    })),
+);
 
-const activeCategoryId = ref(categories[0]?.id ?? 1);
-const activeBrandId = ref('');
+const products = computed(() =>
+    (props.products || []).map((product) => ({
+        id: product.id,
+        category: Number(product.category_id),
+        brand: Number(product.brand_id),
+        name: product.name,
+        code: product.product_code,
+        price: Number(product.price ?? 0),
+        oldPrice: null,
+        image: product.image,
+        rating: 5,
+        reviews: 0,
+        badge: product.status_stock || null,
+        inStock: Number(product.stock ?? 0) > 0,
+    })),
+);
+
+const activeCategoryId = ref(categories.value[0]?.id ?? null);
+const activeBrandId = ref(null);
 
 const filteredProducts = computed(() =>
-    products.filter((product) => {
-        const matchesCategory = product.category === activeCategoryId.value;
+    products.value.filter((product) => {
+        const matchesCategory = !activeCategoryId.value || product.category === activeCategoryId.value;
         const matchesBrand = !activeBrandId.value || product.brand === activeBrandId.value;
         return matchesCategory && matchesBrand;
     }),
 );
 
-const activeCategory = computed(() => categories.find((category) => category.id === activeCategoryId.value));
+const activeCategory = computed(() => categories.value.find((category) => category.id === activeCategoryId.value));
 </script>
 
 <template>
@@ -232,6 +95,7 @@ const activeCategory = computed(() => categories.find((category) => category.id 
                 >
                     <div class="aspect-square relative bg-gradient-to-br from-primary-soft to-secondary">
                         <img
+                            v-if="c.image"
                             :src="c.image"
                             :alt="c.name"
                             class="absolute inset-0 h-full w-full object-cover opacity-70 group-hover:scale-110 transition-transform duration-500"
@@ -253,8 +117,8 @@ const activeCategory = computed(() => categories.find((category) => category.id 
                     <button
                         type="button"
                         class="block w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors"
-                        :class="activeBrandId === '' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'"
-                        @click="activeBrandId = ''"
+                        :class="activeBrandId === null ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'"
+                        @click="activeBrandId = null"
                     >
                         All brands
                     </button>
@@ -265,7 +129,7 @@ const activeCategory = computed(() => categories.find((category) => category.id 
                         type="button"
                         class="block w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors"
                         :class="activeBrandId === b.id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'"
-                        @click="activeBrandId = b.id"
+                        @click="activeBrandId = Number(b.id)"
                     >
                         <span class="mr-2">{{ b.logo }}</span>{{ b.name }}
                     </button>

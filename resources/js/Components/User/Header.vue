@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useActivePath } from '@/composables/useActivePath';
 import { useStore } from '@/composables/useStore';
+import defaultLogo from '@img/Logo.png';
 
 const mobileOpen = ref(false);
 const dropdownOpen = ref(false);
@@ -10,6 +11,56 @@ const { cartCount, wishlist } = useStore();
 
 const page = usePage();
 const { isActive } = useActivePath();
+
+if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('Header appSettings:', page.props.appSettings);
+}
+
+const settings = computed(() => page.props.appSettings || {});
+const storeName = computed(() => settings.value.store_name || 'CamboMart');
+const storeLogo = computed(() => settings.value.logo || null);
+
+function normalizeLogoUrl(logo) {
+    if (!logo || typeof logo !== 'string') return null;
+    const value = logo.trim().replaceAll('\\', '/');
+    if (!value) return null;
+
+    if (
+        value.startsWith('http://') ||
+        value.startsWith('https://') ||
+        value.startsWith('data:') ||
+        value.startsWith('blob:')
+    ) {
+        return value;
+    }
+
+    if (value.startsWith('/')) return value;
+
+    if (value.startsWith('uploads/')) return `/storage/${value}`;
+    if (value.startsWith('public/uploads/')) return `/storage/${value.replace(/^public\//, '')}`;
+    if (value.startsWith('storage/')) return `/${value}`;
+
+    return `/${value}`;
+}
+
+const storeLogoUrl = computed(() => normalizeLogoUrl(storeLogo.value) || defaultLogo);
+
+function onLogoError(event) {
+    if (event?.target) event.target.src = defaultLogo;
+}
+
+const storeNameParts = computed(() => {
+    const name = String(storeName.value || '').trim();
+    if (!name) return { prefix: 'Cambo', highlight: 'Mart' };
+
+    const highlight = 'Mart';
+    if (name.toLowerCase().endsWith(highlight.toLowerCase()) && name.length > highlight.length) {
+        return { prefix: name.slice(0, -highlight.length), highlight: name.slice(-highlight.length) };
+    }
+
+    return { prefix: name, highlight: '' };
+});
 
 const navLinks = [
     { href: route('home'), label: 'Home', match: '/' },
@@ -46,12 +97,18 @@ function linkActive(match) {
         <div class="container mx-auto px-4">
             <div class="flex items-center gap-4 h-18 py-3">
                 <Link :href="route('home')" class="flex items-center gap-2 group shrink-0">
-                    <div class="h-10 w-10 rounded-2xl bg-gradient-brand grid place-items-center text-primary-foreground shadow-glow group-hover:scale-105 transition-transform">
-                        ✨
+                    <div class="h-10 w-10 rounded-2xl bg-background border border-border/60 grid place-items-center shadow-glow group-hover:scale-105 transition-transform overflow-hidden">
+                        <img
+                            :src="storeLogoUrl"
+                            :alt="storeName"
+                            class="h-full w-full object-contain p-1"
+                            loading="lazy"
+                            @error="onLogoError"
+                        />
                     </div>
                     <div class="leading-tight">
                         <div class="text-lg font-bold tracking-tight">
-                            Cambo<span class="text-gradient-brand">Mart</span>
+                            {{ storeNameParts.prefix }}<span v-if="storeNameParts.highlight" class="text-gradient-brand">{{ storeNameParts.highlight }}</span>
                         </div>
                         <div class="text-[10px] uppercase tracking-widest text-muted-foreground -mt-0.5">
                             Fresh · Natural
