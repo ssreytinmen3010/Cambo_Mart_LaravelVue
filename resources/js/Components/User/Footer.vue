@@ -1,7 +1,14 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 
 const currentYear = new Date().getFullYear();
+const page = usePage();
+
+const storeName = computed(() => page.props.appSettings?.store_name ?? 'CamboMart');
+const storeAddress = computed(() => page.props.appSettings?.address ?? 'Phnom Penh, Cambodia');
+const storePhone = computed(() => page.props.appSettings?.phone ?? '+855 23 456 789');
+const storeEmail = computed(() => page.props.appSettings?.email ?? 'hello@cambomart.com');
 
 const socials = [
     { icon: '📘' },
@@ -34,7 +41,7 @@ const companyLinks = [
                 <div class="lg:col-span-2">
                     <Link :href="route('home')" class="flex items-center gap-2">
                         <div class="h-10 w-10 rounded-2xl bg-gradient-brand grid place-items-center shadow-glow">✨</div>
-                        <span class="text-xl font-bold">CamboMart</span>
+                        <span class="text-xl font-bold">{{ storeName }}</span>
                     </Link>
 
                     <p class="mt-4 text-sm text-background/70 max-w-sm leading-relaxed">
@@ -77,9 +84,9 @@ const companyLinks = [
                 <div>
                     <h4 class="font-semibold mb-4">Get in touch</h4>
                     <ul class="space-y-3 text-sm text-background/70">
-                        <li class="flex items-start gap-2">📍 Russian Blvd, Phnom Penh, Cambodia</li>
-                        <li class="flex items-center gap-2">📞 +855 23 456 789</li>
-                        <li class="flex items-center gap-2">✉️ hello@cambomart.com</li>
+                        <li class="flex items-start gap-2">📍 {{ storeAddress }}</li>
+                        <li class="flex items-center gap-2">📞 {{ storePhone }}</li>
+                        <li class="flex items-center gap-2">✉️ {{ storeEmail }}</li>
                     </ul>
 
                     <div class="mt-5">
@@ -101,7 +108,7 @@ const companyLinks = [
             </div>
 
             <div class="mt-12 pt-6 border-t border-background/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-background/60">
-                <p>© {{ currentYear }} CamboMart. All rights reserved.</p>
+                <p>© {{ currentYear }} {{ storeName }}. All rights reserved.</p>
                 <div class="flex items-center gap-5">
                     <a href="#" class="hover:text-primary">Privacy</a>
                     <a href="#" class="hover:text-primary">Terms</a>

@@ -24,8 +24,9 @@ const discount = computed(() => {
 });
 
 const displayRating = computed(() => {
-    const mine = Number(myRatingsByProductId[props.product.id] ?? 0);
-    return mine > 0 ? mine : Math.round(props.product.rating ?? 0);
+    // Only highlight the current user's own rating (not the average),
+    // so new users see all-white stars until they rate.
+    return Number(myRatingsByProductId[props.product.id] ?? 0);
 });
 
 const myRating = computed(() => Number(myRatingsByProductId[props.product.id] ?? 0));

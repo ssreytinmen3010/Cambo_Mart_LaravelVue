@@ -35,12 +35,18 @@ class HandleInertiaRequests extends Middleware
                 'store_name' => Setting::get('store_name', config('app.name', 'CamboMart')),
                 'logo' => Setting::get('logo'),
                 'currency' => Setting::get('currency', 'USD'),
+                'address' => Setting::get('address'),
+                'phone' => Setting::get('phone'),
+                'email' => Setting::get('email'),
             ];
         } catch (\Exception $e) {
             $appSettings = [
                 'store_name' => config('app.name', 'CamboMart'),
                 'logo' => null,
                 'currency' => 'USD',
+                'address' => null,
+                'phone' => null,
+                'email' => null,
             ];
         }
 

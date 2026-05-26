@@ -16,11 +16,17 @@ class CartItem extends Model
         'product_id',
         'quantity',
         'price',
+        'discount_value',
+        'discount_amount',
+        'discount_amount_total',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'price' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'discount_amount_total' => 'decimal:2',
     ];
 
     public function cart(): BelongsTo
@@ -33,4 +39,3 @@ class CartItem extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 }
-

@@ -2,6 +2,11 @@ import { reactive, computed } from 'vue';
 
 const state = reactive({
     cart: [],
+    cartMeta: {
+        subtotal: 0,
+        discount: 0,
+        total_amount: 0,
+    },
     wishlist: [],
     cartLoaded: false,
     cartLoading: null,
@@ -13,9 +18,17 @@ const state = reactive({
 });
 
 export function useStore() {
-    const cartTotal = computed(() =>
-        state.cart.reduce((sum, item) => sum + Number(item.price ?? item.product.price) * item.qty, 0),
-    );
+    const cartSubtotal = computed(() => {
+        if (state.cartMeta && Number(state.cartMeta.subtotal) >= 0) return Number(state.cartMeta.subtotal);
+        return state.cart.reduce((sum, item) => sum + Number(item.price ?? item.product.price) * item.qty, 0);
+    });
+
+    const cartDiscount = computed(() => Number(state.cartMeta?.discount ?? 0));
+
+    const cartTotal = computed(() => {
+        if (state.cartMeta && Number(state.cartMeta.total_amount) >= 0) return Number(state.cartMeta.total_amount);
+        return Math.max(0, cartSubtotal.value - cartDiscount.value);
+    });
 
     const cartCount = computed(() =>
         state.cart.reduce((sum, item) => sum + item.qty, 0),
@@ -28,17 +41,29 @@ export function useStore() {
     function applyServerCart(serverCart) {
         const items = serverCart?.items ?? [];
         const productIds = [];
+
+        state.cartMeta.subtotal = Number(serverCart?.subtotal ?? 0);
+        state.cartMeta.discount = Number(serverCart?.discount ?? 0);
+        state.cartMeta.total_amount = Number(serverCart?.total_amount ?? 0);
+
         state.cart.splice(0, state.cart.length, ...items.map((item) => ({
             id: item.id,
             product: item.product ? {
                 ...item.product,
                 code: item.product.product_code ?? item.product.code,
-                price: Number(item.product.price ?? 0),
+                // Use cart item unit price (already includes promotion discount if any)
+                price: Number(item.price ?? item.product.price ?? 0),
+                // Pre-discount unit price (price + per-unit discount)
+                oldPrice: Number(item.price ?? item.product.price ?? 0) + Number(item.discount_amount ?? 0),
                 inStock: Number(item.product.stock ?? 0) > 0,
                 badge: item.product.status_stock ?? item.product.badge ?? null,
+                promotion: item.product.promotion ?? null,
             } : null,
             qty: Number(item.quantity ?? 0),
             price: Number(item.price ?? item.product?.price ?? 0),
+            discountValue: Number(item.discount_value ?? 0),
+            discountAmount: Number(item.discount_amount ?? 0),
+            discountAmountTotal: Number(item.discount_amount_total ?? 0),
         })));
 
         for (const item of items) {
@@ -221,6 +246,9 @@ export function useStore() {
         state.currentUserId = normalized;
 
         state.cart.splice(0, state.cart.length);
+        state.cartMeta.subtotal = 0;
+        state.cartMeta.discount = 0;
+        state.cartMeta.total_amount = 0;
         state.cartLoaded = false;
         state.cartLoading = null;
 
@@ -236,10 +264,13 @@ export function useStore() {
 
     return {
         cart: state.cart,
+        cartMeta: state.cartMeta,
         wishlist: state.wishlist,
         wishlistProducts: state.wishlistProducts,
         myRatingsByProductId: state.myRatingsByProductId,
         currentUserId: state.currentUserId,
+        cartSubtotal,
+        cartDiscount,
         cartTotal,
         cartCount,
         setCurrentUser,

@@ -6,15 +6,13 @@ import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
 
-const { cart, removeFromCart, updateQty, clearCart, cartTotal, ensureCartLoaded } = useStore();
+const { cart, removeFromCart, updateQty, clearCart, cartSubtotal, cartDiscount, cartTotal, ensureCartLoaded } = useStore();
 
 onMounted(() => {
     ensureCartLoaded();
 });
 
-const shipping = computed(() => (cartTotal.value > 25 || cartTotal.value === 0 ? 0 : 3.5));
-const tax = computed(() => cartTotal.value * 0.05);
-const total = computed(() => cartTotal.value + shipping.value + tax.value);
+const total = computed(() => cartTotal.value);
 </script>
 
 <template>
@@ -52,26 +50,26 @@ const total = computed(() => cartTotal.value + shipping.value + tax.value);
             <div class="mt-8 grid lg:grid-cols-[1fr_380px] gap-8">
                 <div class="space-y-3">
                     <div
-                        v-for="{ product, qty } in cart"
-                        :key="product.id"
+                        v-for="item in cart"
+                        :key="item.product.id"
                         class="flex gap-4 p-4 rounded-2xl bg-card border border-border/60 shadow-soft"
                     >
                         <div class="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl overflow-hidden bg-secondary shrink-0">
-                            <img :src="product.image" :alt="product.name" class="h-full w-full object-cover" />
+                            <img :src="item.product.image" :alt="item.product.name" class="h-full w-full object-cover" />
                         </div>
 
                         <div class="flex-1 min-w-0">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="min-w-0">
                                     <Link :href="route('shop')" class="font-semibold hover:text-primary line-clamp-2">
-                                        {{ product.name }}
+                                        {{ item.product.name }}
                                     </Link>
-                                    <p class="text-xs text-muted-foreground mt-1 font-mono">{{ product.code }}</p>
+                                    <p class="text-xs text-muted-foreground mt-1 font-mono">{{ item.product.code }}</p>
                                 </div>
                                 <button
                                     type="button"
                                     class="h-8 w-8 grid place-items-center rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0"
-                                    @click="removeFromCart(product.id)"
+                                    @click="removeFromCart(item.product.id)"
                                 >
                                     <Trash2 class="h-4 w-4" />
                                 </button>
@@ -82,23 +80,26 @@ const total = computed(() => cartTotal.value + shipping.value + tax.value);
                                     <button
                                         type="button"
                                         class="h-9 w-9 grid place-items-center hover:bg-secondary rounded-l-full"
-                                        @click="updateQty(product.id, qty - 1)"
+                                        @click="updateQty(item.product.id, item.qty - 1)"
                                     >
                                         <Minus class="h-3.5 w-3.5" />
                                     </button>
-                                    <span class="w-9 text-center text-sm font-semibold">{{ qty }}</span>
+                                    <span class="w-9 text-center text-sm font-semibold">{{ item.qty }}</span>
                                     <button
                                         type="button"
                                         class="h-9 w-9 grid place-items-center hover:bg-secondary rounded-r-full"
-                                        @click="updateQty(product.id, qty + 1)"
+                                        @click="updateQty(item.product.id, item.qty + 1)"
                                     >
                                         <Plus class="h-3.5 w-3.5" />
                                     </button>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-bold">${{ (product.price * qty).toFixed(2) }}</p>
-                                    <p v-if="qty > 1" class="text-xs text-muted-foreground">
-                                        ${{ product.price.toFixed(2) }} each
+                                    <p class="font-bold">${{ (item.product.price * item.qty).toFixed(2) }}</p>
+                                    <p v-if="item.discountAmount > 0" class="text-xs text-destructive line-through">
+                                        ${{ item.product.oldPrice.toFixed(2) }}<span v-if="item.qty > 1"> each</span>
+                                    </p>
+                                    <p v-if="item.qty > 1" class="text-xs text-muted-foreground">
+                                        ${{ item.product.price.toFixed(2) }} each
                                     </p>
                                 </div>
                             </div>
@@ -111,17 +112,11 @@ const total = computed(() => cartTotal.value + shipping.value + tax.value);
                     <div class="mt-5 space-y-3 text-sm">
                         <div class="flex justify-between">
                             <span class="text-muted-foreground">Subtotal</span>
-                            <span class="font-medium">${{ cartTotal.toFixed(2) }}</span>
+                            <span class="font-medium">${{ cartSubtotal.toFixed(2) }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-muted-foreground">Shipping</span>
-                            <span class="font-medium" :class="{ 'text-primary': shipping === 0 }">
-                                {{ shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}` }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-muted-foreground">Tax (5%)</span>
-                            <span class="font-medium">${{ tax.toFixed(2) }}</span>
+                            <span class="text-muted-foreground">Discount</span>
+                            <span class="font-medium text-destructive">-${{ cartDiscount.toFixed(2) }}</span>
                         </div>
                         <div class="border-t pt-3 flex justify-between">
                             <span class="font-semibold">Total</span>
@@ -141,7 +136,6 @@ const total = computed(() => cartTotal.value + shipping.value + tax.value);
                     </Link>
 
                     <div class="mt-5 pt-5 border-t text-xs text-muted-foreground space-y-1.5">
-                        <p>🚚 Free delivery on orders over $25</p>
                         <p>🔒 Secure checkout</p>
                     </div>
                 </aside>

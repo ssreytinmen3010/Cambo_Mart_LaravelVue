@@ -19,6 +19,7 @@ const props = defineProps({
 const currentIndex = ref(0);
 const page = usePage();
 const { loadMyRatings } = useStore();
+const storeName = computed(() => page.props.appSettings?.store_name ?? 'CamboMart');
 
 const promotions = ref([
     {
@@ -242,7 +243,7 @@ onUnmounted(() => {
             <section class="container mx-auto px-4 mt-20">
                 <div class="rounded-[2rem] bg-gradient-brand p-10 md:p-14 text-primary-foreground relative overflow-hidden">
                     <div class="relative max-w-2xl">
-                        <h2 class="text-3xl md:text-4xl font-bold">Join the CamboMart Family</h2>
+                        <h2 class="text-3xl md:text-4xl font-bold">Join the {{ storeName }} Family</h2>
                         <p class="mt-3 opacity-90">Get exclusive deals and fresh-arrival alerts.</p>
 
                         <div class="mt-6 flex flex-col sm:flex-row gap-2 max-w-md">

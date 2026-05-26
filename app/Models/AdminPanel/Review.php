@@ -5,6 +5,7 @@ namespace App\Models\AdminPanel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class Review extends Model
 {
@@ -52,5 +53,30 @@ class Review extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected static function booted()
+    {
+        static::saved(function (Review $review) {
+            static::recalculateProductAvgRating($review->product_id);
+        });
+
+        static::deleted(function (Review $review) {
+            static::recalculateProductAvgRating($review->product_id);
+        });
+    }
+
+    public static function recalculateProductAvgRating(?int $productId): void
+    {
+        if (!$productId) return;
+
+        $avg = DB::table('reviews')
+            ->where('product_id', $productId)
+            ->where('review_status', self::STATUS_APPROVED)
+            ->avg('rating_score');
+
+        DB::table('products')
+            ->where('id', $productId)
+            ->update(['cal_avg_rating' => round((float)($avg ?? 0), 2)]);
     }
 }

@@ -76,9 +76,16 @@ const products = computed(() =>
         code: product.product_code,
         category: Number(product.category_id),
         brand: Number(product.brand_id),
-        price: Number(product.price ?? 0),
-        oldPrice: null,
-        badge: product.status_stock || null,
+        price: (() => {
+            const basePrice = Number(product.price ?? 0);
+            if (product.promotion?.promo_type === 'PERCENTAGE') {
+                const discount = Number(product.promotion.discount_value ?? 0);
+                return Math.max(0, Number((basePrice * (1 - discount / 100)).toFixed(2)));
+            }
+            return basePrice;
+        })(),
+        oldPrice: product.promotion?.promo_type === 'PERCENTAGE' ? Number(product.price ?? 0) : null,
+        badge: product.promotion?.promo_type === 'PERCENTAGE' ? 'Sale' : product.status_stock || null,
         inStock: Number(product.stock ?? 0) > 0,
         rating: Number(product.rating ?? 0),
         reviews: Number(product.reviews_count ?? 0),

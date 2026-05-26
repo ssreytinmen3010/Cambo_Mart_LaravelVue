@@ -21,7 +21,7 @@ class CartController extends Controller
     {
         $cart = Cart::query()
             ->where('user_id', Auth::id())
-            ->with(['items.product'])
+            ->with(['items.product.promotion'])
             ->first();
 
         if (!$cart) {
@@ -32,7 +32,7 @@ class CartController extends Controller
                 'total_amount' => 0,
             ]);
 
-            $cart->load(['items.product']);
+            $cart->load(['items.product.promotion']);
         }
 
         return response()->json([
@@ -48,7 +48,9 @@ class CartController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
-            $product = Product::query()->findOrFail($validated['product_id']);
+            $product = Product::query()
+                ->with(['promotion' => fn ($q) => $q->active()])
+                ->findOrFail($validated['product_id']);
 
             $cart = Cart::query()->firstOrCreate(
                 ['user_id' => Auth::id()],
@@ -61,11 +63,16 @@ class CartController extends Controller
             ]);
 
             $item->quantity = (int)($item->quantity ?? 0) + (int)$validated['quantity'];
-            $item->price = $product->price;
+
+            $pricing = $this->calculateUnitPricing($product);
+            $item->price = $pricing['price'];
+            $item->discount_value = $pricing['discount_value'];
+            $item->discount_amount = $pricing['discount_amount'];
+            $item->discount_amount_total = round(((float) $item->discount_amount) * (int) $item->quantity, 2);
             $item->save();
 
             $cart->recalculateTotals()->save();
-            $cart->load(['items.product']);
+            $cart->load(['items.product.promotion']);
 
             return response()->json(['cart' => $cart]);
         });
@@ -86,9 +93,12 @@ class CartController extends Controller
                 'quantity' => (int)$validated['quantity'],
             ]);
 
+            $cartItem->discount_amount_total = round(((float) $cartItem->discount_amount) * (int) $cartItem->quantity, 2);
+            $cartItem->save();
+
             $cart = $cartItem->cart;
             $cart->recalculateTotals()->save();
-            $cart->load(['items.product']);
+            $cart->load(['items.product.promotion']);
 
             return response()->json(['cart' => $cart]);
         });
@@ -105,7 +115,7 @@ class CartController extends Controller
             $cartItem->delete();
 
             $cart->recalculateTotals()->save();
-            $cart->load(['items.product']);
+            $cart->load(['items.product.promotion']);
 
             return response()->json(['cart' => $cart]);
         });
@@ -125,9 +135,45 @@ class CartController extends Controller
             $cart->total_amount = 0;
             $cart->save();
 
-            $cart->load(['items.product']);
+            $cart->load(['items.product.promotion']);
             return response()->json(['cart' => $cart]);
         });
     }
-}
 
+    private function calculateUnitPrice(Product $product): float
+    {
+        return $this->calculateUnitPricing($product)['price'];
+    }
+
+    private function calculateUnitPricing(Product $product): array
+    {
+        $basePrice = (float) $product->price;
+
+        $promotion = $product->promotion;
+        if (!$promotion) {
+            return [
+                'price' => $basePrice,
+                'discount_value' => 0.0,
+                'discount_amount' => 0.0,
+            ];
+        }
+
+        if ($promotion->promo_type === 'PERCENTAGE') {
+            $discountValue = (float) ($promotion->discount_value ?? 0);
+            $price = max(0, round($basePrice * (1 - $discountValue / 100), 2));
+            $discountAmount = max(0, round($basePrice - $price, 2));
+
+            return [
+                'price' => $price,
+                'discount_value' => $discountValue,
+                'discount_amount' => $discountAmount,
+            ];
+        }
+
+        return [
+            'price' => $basePrice,
+            'discount_value' => 0.0,
+            'discount_amount' => 0.0,
+        ];
+    }
+}

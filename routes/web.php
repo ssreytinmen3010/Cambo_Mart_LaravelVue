@@ -21,7 +21,9 @@ use App\Models\AdminPanel\Product;
 use App\Models\AdminPanel\Category;
 use App\Models\AdminPanel\Brand;
 use App\Models\AdminPanel\Review;
+use App\Models\AdminPanel\Promotion;
 use App\Http\Controllers\AdminPanel\SettingController;
+use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,13 +51,10 @@ Route::get('/', function () {
     $products = Product::query()
         ->where('status', 1)
         ->select(['id', 'name', 'image', 'product_code', 'price', 'stock', 'status_stock'])
-        ->selectSub(
-            Review::query()
-                ->selectRaw('COALESCE(AVG(rating_score), 0)')
-                ->whereColumn('product_id', 'products.id')
-                ->where('review_status', Review::STATUS_APPROVED),
-            'rating'
-        )
+        ->with(['promotion' => function ($q) {
+            $q->active()->select(['id', 'product_id', 'promo_type', 'discount_value', 'buy_qty', 'get_qty', 'status']);
+        }])
+        ->addSelect(DB::raw('cal_avg_rating as rating'))
         ->selectSub(
             Review::query()
                 ->selectRaw('COUNT(*)')
@@ -139,13 +138,10 @@ Route::prefix('')->group(function () {
         $products = Product::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
-            ->selectSub(
-                Review::query()
-                    ->selectRaw('COALESCE(AVG(rating_score), 0)')
-                    ->whereColumn('product_id', 'products.id')
-                    ->where('review_status', Review::STATUS_APPROVED),
-                'rating'
-            )
+            ->with(['promotion' => function ($q) {
+                $q->active()->select(['id', 'product_id', 'promo_type', 'discount_value', 'buy_qty', 'get_qty', 'status']);
+            }])
+            ->addSelect(DB::raw('cal_avg_rating as rating'))
             ->selectSub(
                 Review::query()
                     ->selectRaw('COUNT(*)')
@@ -182,13 +178,10 @@ Route::prefix('')->group(function () {
         $products = Product::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
-            ->selectSub(
-                Review::query()
-                    ->selectRaw('COALESCE(AVG(rating_score), 0)')
-                    ->whereColumn('product_id', 'products.id')
-                    ->where('review_status', Review::STATUS_APPROVED),
-                'rating'
-            )
+            ->with(['promotion' => function ($q) {
+                $q->active()->select(['id', 'product_id', 'promo_type', 'discount_value', 'buy_qty', 'get_qty', 'status']);
+            }])
+            ->addSelect(DB::raw('cal_avg_rating as rating'))
             ->selectSub(
                 Review::query()
                     ->selectRaw('COUNT(*)')
@@ -216,13 +209,10 @@ Route::prefix('')->group(function () {
         $products = Product::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'product_code', 'category_id', 'brand_id', 'price', 'stock', 'status_stock', 'created_at'])
-            ->selectSub(
-                Review::query()
-                    ->selectRaw('COALESCE(AVG(rating_score), 0)')
-                    ->whereColumn('product_id', 'products.id')
-                    ->where('review_status', Review::STATUS_APPROVED),
-                'rating'
-            )
+            ->with(['promotion' => function ($q) {
+                $q->active()->select(['id', 'product_id', 'promo_type', 'discount_value', 'buy_qty', 'get_qty', 'status']);
+            }])
+            ->addSelect(DB::raw('cal_avg_rating as rating'))
             ->selectSub(
                 Review::query()
                     ->selectRaw('COUNT(*)')

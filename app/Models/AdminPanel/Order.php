@@ -5,6 +5,7 @@ namespace App\Models\AdminPanel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User; 
+use App\Models\Address;
 
 class Order extends Model
 {
@@ -25,12 +26,14 @@ class Order extends Model
     protected $fillable = [
         'order_number',
         'user_id',
+        'address_id',
         'promotion_id',
         'subtotal_amount',
         'discount_amount',
         'total_amount',
         'order_status',   // "PENDING", "COMPLETED", "CANCELLED", "REFUNDED"
         'payment_status', // "PENDING", "PAID", "FAILED", "REFUNDED"
+        'payment_method', // "online", "cash"
     ];
 
     protected $casts = [
@@ -114,6 +117,11 @@ class Order extends Model
     public function promotion()
     {
         return $this->belongsTo(Promotion::class);
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class, 'address_id', 'address_id');
     }
 
     public function items()

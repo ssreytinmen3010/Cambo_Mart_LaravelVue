@@ -4,6 +4,7 @@ namespace App\Models\AdminPanel;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -23,6 +24,11 @@ class Product extends Model
         'image',
         'status',
         'status_stock',
+        'cal_avg_rating',
+    ];
+
+    protected $casts = [
+        'cal_avg_rating' => 'decimal:2',
     ];
 
     protected static function boot()
@@ -55,5 +61,10 @@ class Product extends Model
     public function brand()
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    public function promotion(): HasOne
+    {
+        return $this->hasOne(Promotion::class, 'product_id');
     }
 }

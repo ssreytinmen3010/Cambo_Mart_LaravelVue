@@ -2,7 +2,9 @@
 import { ref, computed } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import { router, Link } from "@inertiajs/vue3";
-import axios from "axios";
+import axiosLib from "axios";
+
+const axios = typeof window !== "undefined" && window.axios ? window.axios : axiosLib;
 
 const props = defineProps({
   users: {

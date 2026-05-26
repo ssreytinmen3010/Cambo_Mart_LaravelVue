@@ -6,7 +6,7 @@ import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
 
-const { cart, cartTotal, clearCart, ensureCartLoaded } = useStore();
+const { cart, cartSubtotal, cartDiscount, cartTotal, clearCart, ensureCartLoaded } = useStore();
 
 onMounted(() => {
     ensureCartLoaded();
@@ -16,14 +16,12 @@ const method = ref('card');
 const placing = ref(false);
 
 const methods = [
-    { id: 'card', name: 'Credit / Debit card', desc: 'Visa, Mastercard, JCB', icon: CreditCard },
-    { id: 'aba', name: 'ABA Pay', desc: 'Scan with the ABA mobile app', icon: Wallet },
+    // { id: 'card', name: 'Credit / Debit card', desc: 'Visa, Mastercard, JCB', icon: CreditCard },
+    { id: 'aba', name: 'Online Pay', desc: 'Scan with the ABA mobile app', icon: Wallet },
     { id: 'cod', name: 'Cash on delivery', desc: 'Pay when you receive your order', icon: Truck },
 ];
 
-const shipping = computed(() => (cartTotal.value > 25 || cartTotal.value === 0 ? 0 : 3.5));
-const tax = computed(() => cartTotal.value * 0.05);
-const total = computed(() => cartTotal.value + shipping.value + tax.value);
+const total = computed(() => cartTotal.value);
 
 function placeOrder() {
     placing.value = true;
@@ -96,12 +94,9 @@ function placeOrder() {
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Delivery address</span>
                                 <input required class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Street, building, apartment" />
                             </label>
+
                             <label class="block">
-                                <span class="text-xs font-medium text-muted-foreground mb-1.5 block">City</span>
-                                <input required class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Phnom Penh" />
-                            </label>
-                            <label class="block">
-                                <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Postal code</span>
+                                <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Floor</span>
                                 <input class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="120000" />
                             </label>
                         </div>
@@ -123,7 +118,7 @@ function placeOrder() {
                                 <CheckCircle2 v-if="method === m.id" class="absolute top-3 right-3 h-5 w-5 text-primary" />
                             </label>
                         </div>
-
+<!-- 
                         <div v-if="method === 'card'" class="mt-4 grid sm:grid-cols-2 gap-3">
                             <label class="block sm:col-span-2">
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Card number</span>
@@ -137,7 +132,7 @@ function placeOrder() {
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">CVC</span>
                                 <input class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="123" />
                             </label>
-                        </div>
+                        </div> -->
                     </section>
 
                     <section class="rounded-3xl bg-card border border-border/60 shadow-soft p-6">
@@ -171,15 +166,11 @@ function placeOrder() {
                     <div class="mt-4 pt-4 border-t space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-muted-foreground">Subtotal</span>
-                            <span>${{ cartTotal.toFixed(2) }}</span>
+                            <span>${{ cartSubtotal.toFixed(2) }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-muted-foreground">Shipping</span>
-                            <span>{{ shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}` }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-muted-foreground">Tax</span>
-                            <span>${{ tax.toFixed(2) }}</span>
+                            <span class="text-muted-foreground">Discount</span>
+                            <span class="text-destructive">-${{ cartDiscount.toFixed(2) }}</span>
                         </div>
                         <div class="border-t pt-3 flex justify-between font-bold text-lg">
                             <span>Total</span>

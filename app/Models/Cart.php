@@ -39,11 +39,15 @@ class Cart extends Model
 
     public function recalculateTotals(): self
     {
-        $subtotal = $this->items()->sum(DB::raw('quantity * price'));
+        // Subtotal is before discount, total_amount is after discount.
+        // We store discounted unit price in cart_items.price and per-unit discount in cart_items.discount_amount.
+        $subtotalBeforeDiscount = (float) $this->items()->sum(DB::raw('quantity * (price + discount_amount)'));
+        $discountAmount = (float) $this->items()->sum(DB::raw('quantity * discount_amount'));
+        $totalAfterDiscount = (float) $this->items()->sum(DB::raw('quantity * price'));
 
-        $this->subtotal = $subtotal;
-        $this->discount = $this->discount ?? 0;
-        $this->total_amount = max(0, (float)$this->subtotal - (float)$this->discount);
+        $this->subtotal = $subtotalBeforeDiscount;
+        $this->discount = $discountAmount;
+        $this->total_amount = max(0, $totalAfterDiscount);
 
         return $this;
     }
