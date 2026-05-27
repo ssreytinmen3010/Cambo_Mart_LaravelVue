@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
-import { X, Minus, Plus, ShoppingCart, Star } from 'lucide-vue-next';
-import { useStore } from '@/composables/useStore';
+import { ref, computed, watch } from "vue";
+import { router, usePage } from "@inertiajs/vue3";
+import { X, Minus, Plus, ShoppingCart, Star } from "lucide-vue-next";
+import { useStore } from "@/composables/useStore";
 
 const props = defineProps({
     product: {
@@ -15,10 +15,16 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(["close"]);
 
 const page = usePage();
-const { addToCart, isInWishlist, toggleWishlist, rateProduct, myRatingsByProductId } = useStore();
+const {
+    addToCart,
+    isInWishlist,
+    toggleWishlist,
+    rateProduct,
+    myRatingsByProductId,
+} = useStore();
 const qty = ref(1);
 
 const wished = computed(() => isInWishlist(props.product.id));
@@ -26,7 +32,7 @@ const wished = computed(() => isInWishlist(props.product.id));
 const description = computed(
     () =>
         props.product.description ??
-        'Hand-picked, naturally sourced, and delivered fresh to your door. Premium quality you can trust from CamboMart.',
+        "Hand-picked, naturally sourced, and delivered fresh to your door. Premium quality you can trust from CamboMart.",
 );
 
 const discount = computed(() => {
@@ -40,8 +46,12 @@ const displayRating = computed(() => {
     return Number(myRatingsByProductId[props.product.id] ?? 0);
 });
 
-const myRating = computed(() => Number(myRatingsByProductId[props.product.id] ?? 0));
-const avgRatingText = computed(() => Number(props.product.rating ?? 0).toFixed(1));
+const myRating = computed(() =>
+    Number(myRatingsByProductId[props.product.id] ?? 0),
+);
+const avgRatingText = computed(() =>
+    Number(props.product.rating ?? 0).toFixed(1),
+);
 const reviewsCount = computed(() => Number(props.product.reviews ?? 0));
 
 watch(
@@ -61,32 +71,33 @@ function increaseQty() {
 
 async function setRating(value) {
     try {
-        if (!page.props.auth?.user) return router.visit(route('login'));
+        if (!page.props.auth?.user) return router.visit(route("login"));
         await rateProduct(props.product.id, value);
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Save rating failed:', e);
+        console.error("Save rating failed:", e);
     }
 }
 
 async function handleAddToCart() {
     if (!props.product.inStock) return;
     try {
+        if (!page.props.auth?.user) return router.visit(route("login"));
         await addToCart(props.product, qty.value);
-        emit('close');
+        emit("close");
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Add to cart failed:', e);
+        console.error("Add to cart failed:", e);
     }
 }
 
 async function handleWishlist() {
     try {
-        if (!page.props.auth?.user) return router.visit(route('login'));
+        if (!page.props.auth?.user) return router.visit(route("login"));
         await toggleWishlist(props.product.id);
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Wishlist toggle failed:', e);
+        console.error("Wishlist toggle failed:", e);
     }
 }
 </script>
@@ -98,7 +109,9 @@ async function handleWishlist() {
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8"
             @click.self="emit('close')"
         >
-            <div class="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-card border border-border/60 shadow-2xl">
+            <div
+                class="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-card border border-border/60 shadow-2xl"
+            >
                 <button
                     type="button"
                     class="absolute top-4 right-4 z-10 h-9 w-9 grid place-items-center rounded-full bg-background/90 border border-border/60 hover:bg-secondary transition-colors"
@@ -110,7 +123,11 @@ async function handleWishlist() {
 
                 <div class="grid md:grid-cols-2">
                     <div class="relative aspect-square bg-secondary/40">
-                        <img :src="product.image" :alt="product.name" class="h-full w-full object-cover" />
+                        <img
+                            :src="product.image"
+                            :alt="product.name"
+                            class="h-full w-full object-cover"
+                        />
 
                         <span
                             v-if="product.badge"
@@ -120,23 +137,41 @@ async function handleWishlist() {
                         </span>
                     </div>
 
-                    <div class="p-6 md:p-8 flex flex-col max-h-[90vh] overflow-y-auto">
+                    <div
+                        class="p-6 md:p-8 flex flex-col max-h-[90vh] overflow-y-auto"
+                    >
                         <div class="flex items-center gap-2 text-xs flex-wrap">
-                            <span class="font-mono text-muted-foreground">{{ product.code }}</span>
+                            <span class="font-mono text-muted-foreground">{{
+                                product.code
+                            }}</span>
                             <span class="h-1 w-1 rounded-full bg-border" />
                             <span
                                 class="flex items-center gap-1 font-medium"
-                                :class="product.inStock ? 'text-primary' : 'text-destructive'"
+                                :class="
+                                    product.inStock
+                                        ? 'text-primary'
+                                        : 'text-destructive'
+                                "
                             >
                                 <span
                                     class="h-1.5 w-1.5 rounded-full"
-                                    :class="product.inStock ? 'bg-primary' : 'bg-destructive'"
+                                    :class="
+                                        product.inStock
+                                            ? 'bg-primary'
+                                            : 'bg-destructive'
+                                    "
                                 />
-                                {{ product.inStock ? 'In stock' : 'Out of stock' }}
+                                {{
+                                    product.inStock
+                                        ? "In stock"
+                                        : "Out of stock"
+                                }}
                             </span>
                         </div>
 
-                        <h2 class="text-2xl md:text-3xl font-bold mt-2 leading-tight">
+                        <h2
+                            class="text-2xl md:text-3xl font-bold mt-2 leading-tight"
+                        >
                             {{ product.name }}
                         </h2>
 
@@ -147,20 +182,37 @@ async function handleWishlist() {
                                     :key="i"
                                     type="button"
                                     class="leading-none"
-                                    :class="i <= displayRating ? 'text-warning' : 'text-white/80 hover:text-white'"
+                                    :class="
+                                        i <= displayRating
+                                            ? 'text-warning'
+                                            : 'text-white/80 hover:text-white'
+                                    "
                                     :title="`Rate ${i} star${i > 1 ? 's' : ''}`"
                                     @click.stop="setRating(i)"
                                 >
                                     <Star
                                         class="h-4 w-4"
-                                        :class="i <= displayRating ? 'fill-warning text-warning' : 'fill-transparent'"
+                                        :class="
+                                            i <= displayRating
+                                                ? 'fill-warning text-warning'
+                                                : 'fill-transparent'
+                                        "
                                     />
                                 </button>
                             </div>
                             <span class="text-sm text-muted-foreground">
                                 {{ avgRatingText }} ·
-                                <span v-if="myRating > 0 && reviewsCount === 0">You rated {{ myRating }}/5</span>
-                                <span v-else>{{ reviewsCount }} {{ reviewsCount === 1 ? 'review' : 'reviews' }}</span>
+                                <span v-if="myRating > 0 && reviewsCount === 0"
+                                    >You rated {{ myRating }}/5</span
+                                >
+                                <span v-else
+                                    >{{ reviewsCount }}
+                                    {{
+                                        reviewsCount === 1
+                                            ? "review"
+                                            : "reviews"
+                                    }}</span
+                                >
                             </span>
                         </div>
 
@@ -168,7 +220,10 @@ async function handleWishlist() {
                             <span class="text-3xl font-bold text-primary">
                                 ${{ Number(product.price).toFixed(2) }}
                             </span>
-                            <span v-if="product.oldPrice" class="text-base text-muted-foreground line-through">
+                            <span
+                                v-if="product.oldPrice"
+                                class="text-base text-muted-foreground line-through"
+                            >
                                 ${{ Number(product.oldPrice).toFixed(2) }}
                             </span>
                             <span
@@ -179,12 +234,16 @@ async function handleWishlist() {
                             </span>
                         </div>
 
-                        <p class="mt-4 text-sm text-muted-foreground leading-relaxed">
+                        <p
+                            class="mt-4 text-sm text-muted-foreground leading-relaxed"
+                        >
                             {{ description }}
                         </p>
 
                         <div class="mt-6 flex items-center gap-3">
-                            <div class="flex items-center border border-border rounded-full h-11">
+                            <div
+                                class="flex items-center border border-border rounded-full h-11"
+                            >
                                 <button
                                     type="button"
                                     class="h-11 w-11 grid place-items-center hover:bg-secondary rounded-l-full transition-colors"
@@ -193,7 +252,10 @@ async function handleWishlist() {
                                 >
                                     <Minus class="h-4 w-4" />
                                 </button>
-                                <span class="w-10 text-center font-semibold text-sm">{{ qty }}</span>
+                                <span
+                                    class="w-10 text-center font-semibold text-sm"
+                                    >{{ qty }}</span
+                                >
                                 <button
                                     type="button"
                                     class="h-11 w-11 grid place-items-center hover:bg-secondary rounded-r-full transition-colors"
@@ -210,12 +272,19 @@ async function handleWishlist() {
                                 class="h-11 w-11 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-glow hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
                                 @click="handleAddToCart"
                             >
-                                <ShoppingCart class="h-5 w-5 shrink-0" stroke-width="2" />
+                                <ShoppingCart
+                                    class="h-5 w-5 shrink-0"
+                                    stroke-width="2"
+                                />
                             </button>
 
                             <button
                                 type="button"
-                                :title="wished ? 'Remove from wishlist' : 'Add to wishlist'"
+                                :title="
+                                    wished
+                                        ? 'Remove from wishlist'
+                                        : 'Add to wishlist'
+                                "
                                 :class="[
                                     'h-11 w-11 grid place-items-center rounded-full border border-border/60 bg-white shadow-md transition-colors text-lg',
                                     wished
@@ -228,7 +297,9 @@ async function handleWishlist() {
                             </button>
                         </div>
 
-                        <div class="mt-6 pt-6 border-t border-border/60 text-xs text-muted-foreground space-y-1.5">
+                        <div
+                            class="mt-6 pt-6 border-t border-border/60 text-xs text-muted-foreground space-y-1.5"
+                        >
                             <p>🚚 Free delivery on orders over $25</p>
                             <p>🔄 7-day return policy</p>
                             <p>🌿 100% naturally sourced</p>

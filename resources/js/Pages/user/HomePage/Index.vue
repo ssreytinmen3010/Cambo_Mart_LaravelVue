@@ -262,3 +262,5 @@ onUnmounted(() => {
         </div>
     </UserLayout>
 </template>
+
+</script>

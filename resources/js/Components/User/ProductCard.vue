@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
-import { ShoppingCart, Star } from 'lucide-vue-next';
-import QuickViewModal from '@/Components/User/QuickViewModal.vue';
-import { useStore } from '@/composables/useStore';
+import { ref, computed } from "vue";
+import { router, usePage } from "@inertiajs/vue3";
+import { ShoppingCart, Star } from "lucide-vue-next";
+import QuickViewModal from "@/Components/User/QuickViewModal.vue";
+import { useStore } from "@/composables/useStore";
 
 const props = defineProps({
     product: {
@@ -13,7 +13,13 @@ const props = defineProps({
 });
 
 const page = usePage();
-const { addToCart, isInWishlist, toggleWishlist, rateProduct, myRatingsByProductId } = useStore();
+const {
+    addToCart,
+    isInWishlist,
+    toggleWishlist,
+    rateProduct,
+    myRatingsByProductId,
+} = useStore();
 const detailOpen = ref(false);
 
 const wished = computed(() => isInWishlist(props.product.id));
@@ -29,8 +35,12 @@ const displayRating = computed(() => {
     return Number(myRatingsByProductId[props.product.id] ?? 0);
 });
 
-const myRating = computed(() => Number(myRatingsByProductId[props.product.id] ?? 0));
-const avgRatingText = computed(() => Number(props.product.rating ?? 0).toFixed(1));
+const myRating = computed(() =>
+    Number(myRatingsByProductId[props.product.id] ?? 0),
+);
+const avgRatingText = computed(() =>
+    Number(props.product.rating ?? 0).toFixed(1),
+);
 const reviewsCount = computed(() => Number(props.product.reviews ?? 0));
 
 function openDetail() {
@@ -39,30 +49,31 @@ function openDetail() {
 
 async function handleAddToCart() {
     try {
+        if (!page.props.auth?.user) return router.visit(route("login"));
         await addToCart(props.product, 1);
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Add to cart failed:', e);
+        console.error("Add to cart failed:", e);
     }
 }
 
 async function setRating(value) {
     try {
-        if (!page.props.auth?.user) return router.visit(route('login'));
+        if (!page.props.auth?.user) return router.visit(route("login"));
         await rateProduct(props.product.id, value);
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Save rating failed:', e);
+        console.error("Save rating failed:", e);
     }
 }
 
 async function handleWishlist() {
     try {
-        if (!page.props.auth?.user) return router.visit(route('login'));
+        if (!page.props.auth?.user) return router.visit(route("login"));
         await toggleWishlist(props.product.id);
     } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('Wishlist toggle failed:', e);
+        console.error("Wishlist toggle failed:", e);
     }
 }
 </script>
@@ -72,7 +83,9 @@ async function handleWishlist() {
         <div
             class="product-card group relative bg-card rounded-3xl overflow-hidden border border-border/60 hover:border-primary/30 shadow-soft hover:shadow-hover transition-all duration-300 hover:-translate-y-1"
         >
-            <div class="product-card-image relative aspect-square overflow-hidden bg-secondary/50">
+            <div
+                class="product-card-image relative aspect-square overflow-hidden bg-secondary/50"
+            >
                 <img
                     :src="product.image"
                     :alt="product.name"
@@ -105,10 +118,15 @@ async function handleWishlist() {
                     </span>
                 </div>
 
-                <div v-if="product.inStock" class="absolute top-3 right-3 z-20 flex flex-col gap-2 pointer-events-auto">
+                <div
+                    v-if="product.inStock"
+                    class="absolute top-3 right-3 z-20 flex flex-col gap-2 pointer-events-auto"
+                >
                     <button
                         type="button"
-                        :title="wished ? 'Remove from wishlist' : 'Add to wishlist'"
+                        :title="
+                            wished ? 'Remove from wishlist' : 'Add to wishlist'
+                        "
                         :class="[
                             'product-card-action h-9 w-9 grid place-items-center rounded-full border border-border/60 bg-white/95 text-foreground shadow-md backdrop-blur-sm transition-all duration-300',
                             'opacity-100 group-hover:scale-110',
@@ -118,7 +136,9 @@ async function handleWishlist() {
                         ]"
                         @click.stop="handleWishlist"
                     >
-                        <span class="text-base leading-none" aria-hidden="true">❤️</span>
+                        <span class="text-base leading-none" aria-hidden="true"
+                            >❤️</span
+                        >
                     </button>
 
                     <button
@@ -127,7 +147,9 @@ async function handleWishlist() {
                         class="product-card-action h-9 w-9 grid place-items-center rounded-full border border-border/60 bg-white/95 text-foreground shadow-md backdrop-blur-sm transition-all duration-300 opacity-100 group-hover:scale-110 hover:bg-primary hover:text-primary-foreground hover:border-primary"
                         @click.stop="openDetail"
                     >
-                        <span class="text-base leading-none" aria-hidden="true">👁️</span>
+                        <span class="text-base leading-none" aria-hidden="true"
+                            >👁️</span
+                        >
                     </button>
                 </div>
 
@@ -135,7 +157,9 @@ async function handleWishlist() {
                     v-if="!product.inStock"
                     class="absolute inset-0 bg-background/70 backdrop-blur-sm grid place-items-center z-10"
                 >
-                    <span class="px-3 py-1 rounded-full bg-foreground text-background text-xs font-semibold">
+                    <span
+                        class="px-3 py-1 rounded-full bg-foreground text-background text-xs font-semibold"
+                    >
                         Out of stock
                     </span>
                 </div>
@@ -152,11 +176,27 @@ async function handleWishlist() {
             </div>
 
             <div class="p-4">
-                <div class="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5">
+                <div
+                    class="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5"
+                >
                     <span class="font-mono">{{ product.code }}</span>
-                    <span :class="['flex items-center gap-1', product.inStock ? 'text-primary' : 'text-destructive']">
-                        <span :class="['h-1.5 w-1.5 rounded-full', product.inStock ? 'bg-primary' : 'bg-destructive']" />
-                        {{ product.inStock ? 'In stock' : 'Sold out' }}
+                    <span
+                        :class="[
+                            'flex items-center gap-1',
+                            product.inStock
+                                ? 'text-primary'
+                                : 'text-destructive',
+                        ]"
+                    >
+                        <span
+                            :class="[
+                                'h-1.5 w-1.5 rounded-full',
+                                product.inStock
+                                    ? 'bg-primary'
+                                    : 'bg-destructive',
+                            ]"
+                        />
+                        {{ product.inStock ? "In stock" : "Sold out" }}
                     </span>
                 </div>
 
@@ -175,33 +215,57 @@ async function handleWishlist() {
                             :key="i"
                             type="button"
                             class="leading-none"
-                            :class="i <= displayRating ? 'text-warning' : 'text-white/80 hover:text-white'"
+                            :class="
+                                i <= displayRating
+                                    ? 'text-warning'
+                                    : 'text-white/80 hover:text-white'
+                            "
                             :title="`Rate ${i} star${i > 1 ? 's' : ''}`"
                             @click.stop="setRating(i)"
                         >
                             <Star
                                 class="h-3.5 w-3.5"
-                                :class="i <= displayRating ? 'fill-warning text-warning' : 'fill-transparent'"
+                                :class="
+                                    i <= displayRating
+                                        ? 'fill-warning text-warning'
+                                        : 'fill-transparent'
+                                "
                             />
                         </button>
                     </div>
                     <span class="text-muted-foreground">
                         {{ avgRatingText }} ·
-                        <span v-if="myRating > 0 && reviewsCount === 0">You rated {{ myRating }}/5</span>
-                        <span v-else>{{ reviewsCount }} {{ reviewsCount === 1 ? 'review' : 'reviews' }}</span>
+                        <span v-if="myRating > 0 && reviewsCount === 0"
+                            >You rated {{ myRating }}/5</span
+                        >
+                        <span v-else
+                            >{{ reviewsCount }}
+                            {{
+                                reviewsCount === 1 ? "review" : "reviews"
+                            }}</span
+                        >
                     </span>
                 </div>
 
                 <div class="mt-3 flex items-baseline gap-2">
-                    <span class="text-lg font-bold text-foreground">${{ Number(product.price).toFixed(2) }}</span>
-                    <span v-if="product.oldPrice" class="text-xs text-muted-foreground line-through">
+                    <span class="text-lg font-bold text-foreground"
+                        >${{ Number(product.price).toFixed(2) }}</span
+                    >
+                    <span
+                        v-if="product.oldPrice"
+                        class="text-xs text-muted-foreground line-through"
+                    >
                         ${{ Number(product.oldPrice).toFixed(2) }}
                     </span>
                 </div>
             </div>
         </div>
 
-        <QuickViewModal :product="product" :open="detailOpen" @close="detailOpen = false" />
+        <QuickViewModal
+            :product="product"
+            :open="detailOpen"
+            @close="detailOpen = false"
+        />
     </div>
 </template>
 

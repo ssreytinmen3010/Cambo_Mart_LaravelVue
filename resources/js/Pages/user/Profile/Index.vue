@@ -11,7 +11,10 @@ const authUser = computed(() => page.props.auth?.user);
 const showCheckoutResult = ref(false);
 const checkoutResult = computed(() => page.props.flash?.checkout ?? null);
 const checkoutPaymentStatus = computed(() => checkoutResult.value?.payment_status ?? null);
-const checkoutTitle = computed(() => 'Success');
+const checkoutTitle = computed(() => {
+    if (!checkoutPaymentStatus.value) return 'Success';
+    return checkoutPaymentStatus.value === 'PAID' ? 'Success' : 'Awaiting payment';
+});
 const checkoutDescription = computed(() => {
     if (!checkoutResult.value) return '';
     const paymentText = checkoutPaymentStatus.value ?? 'UNKNOWN';
