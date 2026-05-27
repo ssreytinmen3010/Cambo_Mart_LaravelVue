@@ -1,18 +1,26 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CreditCard, Truck, Wallet, CheckCircle2, ShieldCheck } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
 
 const { cart, cartSubtotal, cartDiscount, cartTotal, clearCart, ensureCartLoaded } = useStore();
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user ?? null);
 
 onMounted(() => {
     ensureCartLoaded();
+
+    if (authUser.value) {
+        form.value.name = authUser.value.name ?? form.value.name;
+        form.value.phone = authUser.value.phone ?? form.value.phone;
+        form.value.email = authUser.value.email ?? form.value.email;
+    }
 });
 
-const method = ref('card');
+const method = ref('aba');
 const placing = ref(false);
 
 const methods = [
@@ -23,15 +31,38 @@ const methods = [
 
 const total = computed(() => cartTotal.value);
 
+const form = ref({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    floor: '',
+    note: '',
+});
+
 function placeOrder() {
     placing.value = true;
-    setTimeout(() => {
-        clearCart();
-        placing.value = false;
-        router.visit(route('user.profile'), {
-            onSuccess: () => {},
-        });
-    }, 900);
+
+    const payment_method = method.value === 'aba' ? 'online' : 'cash';
+
+    router.post(
+        route('checkout.store'),
+        {
+            name: form.value.name,
+            phone: form.value.phone,
+            address: form.value.address,
+            floor: form.value.floor || null,
+            payment_method,
+        },
+        {
+            onFinish: () => {
+                placing.value = false;
+            },
+            onSuccess: () => {
+                clearCart();
+            },
+        }
+    );
 }
 </script>
 
@@ -80,24 +111,43 @@ function placeOrder() {
                         <div class="grid sm:grid-cols-2 gap-3">
                             <label class="block">
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Full name</span>
-                                <input required class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="John Sok" />
+                                <input
+                                    v-model="form.name"
+                                    required
+                                    :readonly="!!authUser?.name"
+                                    class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-muted/30 read-only:text-muted-foreground"
+                                    placeholder="John Sok"
+                                />
                             </label>
                             <label class="block">
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Phone</span>
-                                <input required type="tel" class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="+855 12 345 678" />
+                                <input
+                                    v-model="form.phone"
+                                    required
+                                    type="tel"
+                                    :readonly="!!authUser?.phone"
+                                    class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-muted/30 read-only:text-muted-foreground"
+                                    placeholder="+855 12 345 678"
+                                />
                             </label>
                             <label class="block sm:col-span-2">
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Email</span>
-                                <input required type="email" class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="you@email.com" />
+                                <input
+                                    v-model="form.email"
+                                    type="email"
+                                    :readonly="!!authUser?.email"
+                                    class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-muted/30 read-only:text-muted-foreground"
+                                    placeholder="you@email.com"
+                                />
                             </label>
                             <label class="block sm:col-span-2">
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Delivery address</span>
-                                <input required class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Street, building, apartment" />
+                                <input v-model="form.address" required class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Street, building, apartment" />
                             </label>
 
                             <label class="block">
                                 <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Floor</span>
-                                <input class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="120000" />
+                                <input v-model="form.floor" class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Floor 2" />
                             </label>
                         </div>
                     </section>
@@ -137,7 +187,7 @@ function placeOrder() {
 
                     <section class="rounded-3xl bg-card border border-border/60 shadow-soft p-6">
                         <h3 class="font-bold mb-4">Order notes (optional)</h3>
-                        <textarea
+                        <textarea v-model="form.note"
                             rows="3"
                             placeholder="Delivery instructions, gift notes…"
                             class="w-full rounded-2xl border bg-background p-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"

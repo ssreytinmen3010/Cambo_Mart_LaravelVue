@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { User, Package, Heart, Settings, LogOut, Activity, MapPin, Edit2 } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
@@ -7,6 +7,21 @@ import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 
 const page = usePage();
 const authUser = computed(() => page.props.auth?.user);
+
+const showCheckoutResult = ref(false);
+const checkoutResult = computed(() => page.props.flash?.checkout ?? null);
+const checkoutPaymentStatus = computed(() => checkoutResult.value?.payment_status ?? null);
+const checkoutTitle = computed(() => 'Success');
+const checkoutDescription = computed(() => {
+    if (!checkoutResult.value) return '';
+    const paymentText = checkoutPaymentStatus.value ?? 'UNKNOWN';
+    if (paymentText === 'PAID') return `Order ${checkoutResult.value.order_number} placed. Payment: PAID.`;
+    return `Order ${checkoutResult.value.order_number} placed. Payment: ${paymentText}.`;
+});
+
+onMounted(() => {
+    if (checkoutResult.value) showCheckoutResult.value = true;
+});
 
 const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -50,6 +65,34 @@ const initials = computed(() => {
     <Head title="My Profile" />
 
     <UserLayout>
+        <!-- Checkout Result Modal -->
+        <Transition name="modal-fade">
+            <div v-if="showCheckoutResult" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" @click="showCheckoutResult = false"></div>
+                <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-pop">
+                    <div class="p-6">
+                        <div
+                            class="h-12 w-12 rounded-2xl grid place-items-center font-black"
+                            :class="checkoutPaymentStatus === 'PAID' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
+                        >
+                            {{ checkoutPaymentStatus === 'PAID' ? '✓' : '⏳' }}
+                        </div>
+
+                        <h3 class="mt-4 text-xl font-black text-slate-800">{{ checkoutTitle }}</h3>
+                        <p class="mt-1 text-sm text-slate-600">{{ checkoutDescription }}</p>
+
+                        <button
+                            type="button"
+                            class="w-full mt-5 rounded-full bg-primary py-3 text-primary-foreground font-medium shadow-glow hover:bg-primary/90"
+                            @click="showCheckoutResult = false"
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
         <div class="container mx-auto px-4 py-8">
             <UserBreadcrumb :items="[{ label: 'Home', href: route('home') }, { label: 'Profile' }]" />
 
@@ -221,3 +264,27 @@ const initials = computed(() => {
         </div>
     </UserLayout>
 </template>
+
+<style>
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+    opacity: 0;
+}
+.animate-pop {
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes pop {
+    0% {
+        transform: scale(0.96);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+</style>

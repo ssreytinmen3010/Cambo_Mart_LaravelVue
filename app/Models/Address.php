@@ -11,8 +11,6 @@ class Address extends Model
 
     protected $table = 'address';
 
-    protected $primaryKey = 'address_id';
-
     protected $fillable = [
         'user_id',
         'name',
@@ -26,4 +24,3 @@ class Address extends Model
         return $this->belongsTo(User::class);
     }
 }
-

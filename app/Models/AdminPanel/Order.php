@@ -23,6 +23,10 @@ class Order extends Model
     const PAYMENT_FAILED = 'FAILED';
     const PAYMENT_REFUNDED = 'REFUNDED';
 
+    // --- Payment Method Constants ---
+    const PAYMENT_METHOD_CASH = 'cash';
+    const PAYMENT_METHOD_ONLINE = 'online';
+
     protected $fillable = [
         'order_number',
         'user_id',
@@ -121,7 +125,7 @@ class Order extends Model
 
     public function address()
     {
-        return $this->belongsTo(Address::class, 'address_id', 'address_id');
+        return $this->belongsTo(Address::class, 'address_id');
     }
 
     public function items()

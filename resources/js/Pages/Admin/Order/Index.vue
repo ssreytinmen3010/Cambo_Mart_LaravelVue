@@ -16,6 +16,7 @@ const statusFilter = ref(props.filters?.status || "");
 
 const showViewModal = ref(false);
 const viewOrder = ref(null);
+const expandedItemsOrderId = ref(null);
 
 const filteredOrders = computed(() => props.orders.data);
 
@@ -49,6 +50,14 @@ function updateStatus(order, type, newStatus) {
 
 function deleteItem(id) {
   if(confirm("Delete this order? This cannot be undone.")) router.delete(route('admin.orders.destroy', id));
+}
+
+function toggleItems(orderId) {
+  expandedItemsOrderId.value = expandedItemsOrderId.value === orderId ? null : orderId;
+}
+
+function getItemCode(item) {
+  return item?.product_code ?? item?.code ?? item?.product?.product_code ?? item?.product?.code ?? "-";
 }
 </script>
 
@@ -93,16 +102,21 @@ function deleteItem(id) {
     </div>
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <table class="min-w-full divide-y divide-slate-200">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200">
         <thead class="bg-slate-50">
-          <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
             <th class="px-6 py-3">Order</th>
             <th class="px-6 py-3">Customer</th>
-            <th class="px-6 py-3">Promotion</th>
+            <th class="px-6 py-3">Address</th>
+            <!-- <th class="px-6 py-3">Promotion</th> -->
             <th class="px-6 py-3 text-center">Items</th>
-            <th class="px-6 py-3">Total</th>
+            <th class="px-6 py-3 text-right">Subtotal</th>
+            <th class="px-6 py-3 text-right">Discount</th>
+            <th class="px-6 py-3 text-right">Total</th>
+            <th class="px-6 py-3 text-center">Method</th>
             <th class="px-6 py-3 text-center">Order Status</th>
-            <th class="px-6 py-3 text-center">Payment</th>
+            <th class="px-6 py-3 text-center white-space: nowrap">Payment</th>
             <th class="px-6 py-3">Date</th>
             <th class="px-6 py-3 text-right">Action</th>
           </tr>
@@ -122,20 +136,89 @@ function deleteItem(id) {
               </div>
             </td>
             <td class="px-6 py-4">
+              <div class="text-[11px] text-slate-600 font-medium max-w-[240px] truncate" :title="o.customer_address || ''">
+                {{ o.customer_address || '—' }}
+              </div>
+            </td>
+            <!-- <td class="px-6 py-4">
                <div v-if="o.promotion_code !== 'None'" class="flex flex-col gap-0.5">
                   <span class="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-black border border-green-100 uppercase w-fit">{{ o.promotion_code }}</span>
                   <span class="text-[9px] text-slate-400 font-bold ml-1">{{ o.promotion_description }}</span>
                </div>
                <span v-else class="text-[10px] font-bold text-slate-400 italic">None</span>
+            </td> -->
+             <td class="px-6 py-4">
+                <div class="max-w-[360px]">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Items
+                      <span class="ml-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        {{ o.items.length }}
+                      </span>
+                    </div>
+                    <button
+                      v-if="o.items.length > 2"
+                      type="button"
+                      class="text-[10px] font-black text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-full transition-all"
+                      @click="toggleItems(o.id)"
+                    >
+                      {{ expandedItemsOrderId === o.id ? 'Less' : 'More' }}
+                    </button>
+                  </div>
+
+                  <div class="space-y-1">
+                    <div
+                      v-for="it in (expandedItemsOrderId === o.id ? o.items : o.items.slice(0, 2))"
+                      :key="it.id"
+                      class="w-full flex items-center justify-between gap-4 px-4 py-2.5 rounded-2xl bg-emerald-50/50 hover:bg-emerald-100/60 transition-colors"
+                    >
+                      <div class="min-w-0 flex-1 flex flex-col items-end leading-tight">
+                        <span class="font-mono text-[9px] px-1.5 py-0.5 rounded-full bg-white/80 text-slate-500 mb-0.5">
+                          {{ getItemCode(it) }}
+                        </span>
+                        <div class="text-[11px] font-black text-slate-800 whitespace-nowrap w-full">
+                          {{ it.product_name }}
+                        </div>
+                      </div>
+
+                      <div class="shrink-0 flex items-center gap-1.5 text-[10px] font-black">
+                        <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                          ${{ it.unit_price }}
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800">
+                          × {{ it.qty }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      v-if="expandedItemsOrderId !== o.id && o.items.length > 2"
+                      class="text-[10px] font-black text-slate-500 pl-1"
+                    >
+                      +{{ o.items.length - 2 }} more item(s)
+                    </div>
+                  </div>
+                </div>
+             </td>
+            <td class="px-6 py-4 text-right">
+              <div class="text-[12px] font-black text-slate-700">${{ o.subtotal }}</div>
             </td>
+            <td class="px-6 py-4 text-right">
+              <div class="text-[12px] font-black" :class="o.discount > 0 ? 'text-rose-600' : 'text-slate-400'">
+                -${{ o.discount }}
+              </div>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="text-sm font-black text-emerald-600">${{ o.total_amount }}</div>
+            </td>
+
             <td class="px-6 py-4 text-center">
-               <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{{ o.items.length }}</span>
+              <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase"
+                :class="o.payment_method === 'ONLINE' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'">
+                {{ o.payment_method || '—' }}
+              </span>
             </td>
-            <td class="px-6 py-4">
-               <div class="text-sm font-black text-emerald-600">${{ o.total_amount }}</div>
-               <div v-if="o.discount > 0" class="text-[9px] text-rose-400 font-bold mt-0.5">-${{ o.discount }} save</div>
-            </td>
-            
+             
             <td class="px-6 py-4 text-center">
                <span :class="`bg-${o.status_color}-100 text-${o.status_color}-700`" class="px-3 py-1 rounded-full text-[10px] font-black uppercase">{{ o.order_status }}</span>
             </td>
@@ -157,7 +240,8 @@ function deleteItem(id) {
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
       <div v-if="orders.links" class="p-3 flex justify-center gap-1">
          <Link v-for="(link, i) in orders.links" :key="i" :href="link.url || '#'" v-html="link.label" class="px-3 py-1 text-xs rounded" :class="link.active ? 'bg-green-500 text-white' : 'text-gray-500'" />
       </div>

@@ -11,7 +11,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'items.product', 'promotion.product']);
+        $query = Order::with(['user', 'address', 'items.product', 'promotion.product']);
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
@@ -46,6 +46,9 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'customer_name' => $order->user ? $order->user->name : 'Guest',
                 'customer_image' => $order->user ? $order->user->image : null,
+                'customer_address' => $order->address
+                    ? trim($order->address->address . ($order->address->floor ? (', Floor ' . $order->address->floor) : ''))
+                    : null,
                 'promotion_code' => $order->promotion ? $order->promotion->code : 'None',
                 'promotion_description' => $order->promotion ? $order->promotion->description : null,
                 'subtotal' => $order->subtotal_amount,
@@ -53,6 +56,7 @@ class OrderController extends Controller
                 'total_amount' => $order->total_amount,
                 'order_status' => $order->order_status,
                 'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method ? strtoupper($order->payment_method) : null,
                 'status_color' => $order->order_status_color,
                 'payment_color' => $order->payment_status_color,
                 'created_at' => $order->created_at->format('Y-m-d H:i'),
@@ -71,6 +75,7 @@ class OrderController extends Controller
                     return [
                         'id' => $item->id,
                         'product_name' => $item->product ? $item->product->name : 'Unknown Product',
+                        'product_code' => $item->product ? $item->product->product_code : null,
                         'image' => $item->product ? $item->product->image : null,
                         'qty' => $item->qty,
                         'unit_price' => $item->unit_price,

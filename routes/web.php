@@ -14,6 +14,7 @@ use App\Http\Controllers\AdminPanel\ReviewController;
 use App\Http\Controllers\AdminPanel\LocationController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\CheckoutController;
 use App\Http\Controllers\User\WishlistController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
 use App\Models\User;
@@ -119,6 +120,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/user/reviews', [UserReviewController::class, 'store'])->name('user.reviews.store');
     Route::get('/user/reviews/my', [UserReviewController::class, 'myRatings'])->name('user.reviews.my');
+
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 });
 
 Route::prefix('')->group(function () {
