@@ -31,6 +31,12 @@ const systemForm = useForm({
   phone: props.settings?.phone || "+855 12 345 678",
   map_lat: props.settings?.map_lat || "11.5564",
   map_long: props.settings?.map_long || "104.9282",
+  bakong_account_id: props.settings?.bakong_account_id || "",
+  bakong_merchant_id: props.settings?.bakong_merchant_id || "",
+  bakong_merchant_name: props.settings?.bakong_merchant_name || "",
+  bakong_merchant_city: props.settings?.bakong_merchant_city || "",
+  bakong_acquiring_bank: props.settings?.bakong_acquiring_bank || "",
+  bakong_qr_timeout_minutes: props.settings?.bakong_qr_timeout_minutes || 10,
   logo: null,
 });
 
@@ -404,6 +410,61 @@ function updateSystemSettings() {
                  </label>
                  <input v-model="systemForm.map_long" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="104.9282">
                  <div v-if="systemForm.errors.map_long" class="text-rose-500 text-xs font-bold">{{ systemForm.errors.map_long }}</div>
+              </div>
+
+              <div class="space-y-2 md:col-span-2 mt-2">
+                 <div class="flex items-center gap-2">
+                   <v-icon size="18" class="text-emerald-600">mdi-qrcode-scan</v-icon>
+                   <h4 class="text-sm font-black text-slate-700 uppercase tracking-wider">Bakong Settings</h4>
+                 </div>
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-bank</v-icon>
+                   Bakong Account ID
+                 </label>
+                 <input v-model="systemForm.bakong_account_id" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="your bakong account id">
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-credit-card-chip</v-icon>
+                   Merchant ID
+                 </label>
+                 <input v-model="systemForm.bakong_merchant_id" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="123456">
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-store</v-icon>
+                   Merchant Name
+                 </label>
+                 <input v-model="systemForm.bakong_merchant_name" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="DAVIT YEM">
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-city</v-icon>
+                   Merchant City
+                 </label>
+                 <input v-model="systemForm.bakong_merchant_city" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="Phnom Penh">
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-bank-transfer</v-icon>
+                   Acquiring Bank
+                 </label>
+                 <input v-model="systemForm.bakong_acquiring_bank" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="Dev Bank">
+              </div>
+
+              <div class="space-y-2">
+                 <label class="text-xs font-bold text-slate-600 uppercase flex items-center gap-1">
+                   <v-icon size="14">mdi-timer-outline</v-icon>
+                   QR Timeout (minutes)
+                 </label>
+                 <input v-model="systemForm.bakong_qr_timeout_minutes" type="number" min="1" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700" placeholder="10">
               </div>
            </div>
 

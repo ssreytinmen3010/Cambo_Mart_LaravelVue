@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
-import UserLayout from '@/Layouts/UserLayout.vue';
-import ProductCard from '@/Components/User/ProductCard.vue';
-import { useStore } from '@/composables/useStore';
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { Head, usePage } from "@inertiajs/vue3";
+import UserLayout from "@/Layouts/UserLayout.vue";
+import ProductCard from "@/Components/User/ProductCard.vue";
+import { useStore } from "@/composables/useStore";
 
 const props = defineProps({
     categories: {
@@ -19,20 +19,22 @@ const props = defineProps({
 const currentIndex = ref(0);
 const page = usePage();
 const { loadMyRatings } = useStore();
-const storeName = computed(() => page.props.appSettings?.store_name ?? 'CamboMart');
+const storeName = computed(
+    () => page.props.appSettings?.store_name ?? "CamboMart",
+);
 
 const promotions = ref([
     {
-        title: 'Fresh Organic Vegetables',
-        subtitle: 'Premium Cambodian farm products delivered fresh.',
-        accent: 'Natural Fresh',
-        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e',
+        title: "Fresh Organic Vegetables",
+        subtitle: "Premium Cambodian farm products delivered fresh.",
+        accent: "Natural Fresh",
+        image: "https://images.unsplash.com/photo-1542838132-92c53300491e",
     },
     {
-        title: 'Healthy Fruits Collection',
-        subtitle: 'Sweet and fresh seasonal fruits.',
-        accent: 'Best Seller',
-        image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b',
+        title: "Healthy Fruits Collection",
+        subtitle: "Sweet and fresh seasonal fruits.",
+        accent: "Best Seller",
+        image: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b",
     },
 ]);
 
@@ -43,15 +45,15 @@ const categories = computed(() =>
         ...category,
         // UI expects `count` + `icon`
         count: Number(category.qty_item ?? 0),
-        icon: '🛍️',
-    }))
+        icon: "🛍️",
+    })),
 );
 
 const features = ref([
-    { icon: '🚚', title: 'Free Delivery', desc: 'On orders over $25' },
-    { icon: '🌿', title: '100% Natural', desc: 'Locally sourced quality' },
-    { icon: '🛡️', title: 'Secure Payment', desc: 'Trusted checkout' },
-    { icon: '🎧', title: '24/7 Support', desc: 'Always here for you' },
+    { icon: "🚚", title: "Free Delivery", desc: "On orders over $25" },
+    { icon: "🌿", title: "100% Natural", desc: "Locally sourced quality" },
+    { icon: "🛡️", title: "Secure Payment", desc: "Trusted checkout" },
+    { icon: "🎧", title: "24/7 Support", desc: "Always here for you" },
 ]);
 
 const featuredProducts = computed(() =>
@@ -62,23 +64,29 @@ const featuredProducts = computed(() =>
         code: product.product_code,
         price: (() => {
             const basePrice = Number(product.price ?? 0);
-            if (product.promotion?.promo_type === 'PERCENTAGE') {
+            if (product.promotion?.promo_type === "PERCENTAGE") {
                 const discount = Number(product.promotion.discount_value ?? 0);
-                return Math.max(0, Number((basePrice * (1 - discount / 100)).toFixed(2)));
+                return Math.max(
+                    0,
+                    Number((basePrice * (1 - discount / 100)).toFixed(2)),
+                );
             }
             return basePrice;
         })(),
-        oldPrice: product.promotion?.promo_type === 'PERCENTAGE' ? Number(product.price ?? 0) : null,
+        oldPrice:
+            product.promotion?.promo_type === "PERCENTAGE"
+                ? Number(product.price ?? 0)
+                : null,
         badge:
-            product.promotion?.promo_type === 'PERCENTAGE'
-                ? 'Sale'
-                : product.promotion?.promo_type === 'BOGO'
-                  ? 'BOGO'
+            product.promotion?.promo_type === "PERCENTAGE"
+                ? "Sale"
+                : product.promotion?.promo_type === "BOGO"
+                  ? "BOGO"
                   : product.status_stock || null,
         inStock: Number(product.stock ?? 0) > 0,
         rating: Number(product.rating ?? 0),
         reviews: Number(product.reviews_count ?? 0),
-    }))
+    })),
 );
 
 let interval = null;
@@ -89,7 +97,9 @@ onMounted(() => {
     }, 5000);
 
     if (page.props.auth?.user) {
-        const ids = (props.products || []).map((p) => Number(p.id)).filter(Boolean);
+        const ids = (props.products || [])
+            .map((p) => Number(p.id))
+            .filter(Boolean);
         loadMyRatings(ids);
     }
 });
@@ -105,18 +115,30 @@ onUnmounted(() => {
     <UserLayout>
         <div class="pb-10">
             <section class="container mx-auto px-4 pt-6">
-                <div class="relative overflow-hidden rounded-[2rem] bg-gradient-soft border border-border/60 shadow-card">
-                    <div class="grid md:grid-cols-2 min-h-[420px] lg:min-h-[500px]">
-                        <div class="relative z-10 p-8 md:p-14 flex flex-col justify-center">
-                            <span class="inline-flex w-fit items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider">
+                <div
+                    class="relative overflow-hidden rounded-[2rem] bg-gradient-soft border border-border/60 shadow-card"
+                >
+                    <div
+                        class="grid md:grid-cols-2 min-h-[420px] lg:min-h-[500px]"
+                    >
+                        <div
+                            class="relative z-10 p-8 md:p-14 flex flex-col justify-center"
+                        >
+                            <span
+                                class="inline-flex w-fit items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider"
+                            >
                                 ✨ {{ currentPromotion.accent }}
                             </span>
 
-                            <h1 class="mt-5 text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05]">
+                            <h1
+                                class="mt-5 text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05]"
+                            >
                                 {{ currentPromotion.title }}
                             </h1>
 
-                            <p class="mt-4 text-base md:text-lg text-muted-foreground max-w-md">
+                            <p
+                                class="mt-4 text-base md:text-lg text-muted-foreground max-w-md"
+                            >
                                 {{ currentPromotion.subtitle }}
                             </p>
 
@@ -144,17 +166,25 @@ onUnmounted(() => {
                                 class="absolute inset-0 h-full w-full object-cover"
                             />
 
-                            <div class="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent"
+                            />
                         </div>
                     </div>
 
-                    <div class="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+                    <div
+                        class="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2"
+                    >
                         <button
                             v-for="(item, index) in promotions"
                             :key="index"
                             type="button"
                             class="h-2 rounded-full transition-all"
-                            :class="currentIndex === index ? 'w-8 bg-primary' : 'w-2 bg-foreground/20'"
+                            :class="
+                                currentIndex === index
+                                    ? 'w-8 bg-primary'
+                                    : 'w-2 bg-foreground/20'
+                            "
                             :aria-label="`Go to slide ${index + 1}`"
                             @click="currentIndex = index"
                         />
@@ -169,13 +199,19 @@ onUnmounted(() => {
                         :key="feature.title"
                         class="flex items-center gap-4 p-5 rounded-2xl bg-card border border-border/60 shadow-soft"
                     >
-                        <div class="h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center shrink-0">
+                        <div
+                            class="h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center shrink-0"
+                        >
                             {{ feature.icon }}
                         </div>
 
                         <div>
-                            <p class="font-semibold text-sm">{{ feature.title }}</p>
-                            <p class="text-xs text-muted-foreground">{{ feature.desc }}</p>
+                            <p class="font-semibold text-sm">
+                                {{ feature.title }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ feature.desc }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -184,10 +220,14 @@ onUnmounted(() => {
             <section class="container mx-auto px-4 mt-16">
                 <div class="flex items-end justify-between mb-6">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-primary">
+                        <p
+                            class="text-xs font-semibold uppercase tracking-wider text-primary"
+                        >
                             Featured Categories
                         </p>
-                        <h2 class="text-2xl md:text-3xl font-bold mt-1">Shop by Category</h2>
+                        <h2 class="text-2xl md:text-3xl font-bold mt-1">
+                            Shop by Category
+                        </h2>
                     </div>
                 </div>
 
@@ -198,7 +238,9 @@ onUnmounted(() => {
                         :href="route('categories')"
                         class="group block"
                     >
-                        <div class="aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-primary-soft to-secondary relative border border-border/60">
+                        <div
+                            class="aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-primary-soft to-secondary relative border border-border/60"
+                        >
                             <img
                                 v-if="category.image"
                                 :src="category.image"
@@ -207,12 +249,18 @@ onUnmounted(() => {
                                 loading="lazy"
                             />
 
-                            <div class="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent"
+                            />
 
                             <div class="absolute bottom-0 inset-x-0 p-3">
                                 <!-- <div class="text-2xl mb-1">{{ category.icon }}</div> -->
-                                <p class="text-sm font-semibold">{{ category.name }}</p>
-                                <p class="text-[10px] text-muted-foreground">{{ category.count }} items</p>
+                                <p class="text-sm font-semibold">
+                                    {{ category.name }}
+                                </p>
+                                <p class="text-[10px] text-muted-foreground">
+                                    {{ category.count }} items
+                                </p>
                             </div>
                         </div>
                     </a>
@@ -222,16 +270,27 @@ onUnmounted(() => {
             <section class="container mx-auto px-4 mt-16">
                 <div class="flex items-end justify-between mb-6">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-primary">Trending Now</p>
-                        <h2 class="text-2xl md:text-3xl font-bold mt-1">Popular Products</h2>
+                        <p
+                            class="text-xs font-semibold uppercase tracking-wider text-primary"
+                        >
+                            Trending Now
+                        </p>
+                        <h2 class="text-2xl md:text-3xl font-bold mt-1">
+                            Popular Products
+                        </h2>
                     </div>
 
-                    <a :href="route('shop')" class="text-sm font-medium text-primary hover:underline">
+                    <a
+                        :href="route('shop')"
+                        class="text-sm font-medium text-primary hover:underline"
+                    >
                         View all →
                     </a>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div
+                    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                >
                     <ProductCard
                         v-for="product in featuredProducts"
                         :key="product.id"
@@ -241,18 +300,29 @@ onUnmounted(() => {
             </section>
 
             <section class="container mx-auto px-4 mt-20">
-                <div class="rounded-[2rem] bg-gradient-brand p-10 md:p-14 text-primary-foreground relative overflow-hidden">
+                <div
+                    class="rounded-[2rem] bg-gradient-brand p-10 md:p-14 text-primary-foreground relative overflow-hidden"
+                >
                     <div class="relative max-w-2xl">
-                        <h2 class="text-3xl md:text-4xl font-bold">Join the {{ storeName }} Family</h2>
-                        <p class="mt-3 opacity-90">Get exclusive deals and fresh-arrival alerts.</p>
+                        <h2 class="text-3xl md:text-4xl font-bold">
+                            Join the {{ storeName }} Family
+                        </h2>
+                        <p class="mt-3 opacity-90">
+                            Get exclusive deals and fresh-arrival alerts.
+                        </p>
 
-                        <div class="mt-6 flex flex-col sm:flex-row gap-2 max-w-md">
+                        <div
+                            class="mt-6 flex flex-col sm:flex-row gap-2 max-w-md"
+                        >
                             <input
                                 type="email"
                                 placeholder="Enter your email"
                                 class="flex-1 h-12 px-5 rounded-full text-foreground outline-none"
                             />
-                            <button type="button" class="rounded-full bg-foreground text-background px-7 py-3 font-medium hover:opacity-90 transition-opacity">
+                            <button
+                                type="button"
+                                class="rounded-full bg-foreground text-background px-7 py-3 font-medium hover:opacity-90 transition-opacity"
+                            >
                                 Subscribe
                             </button>
                         </div>
@@ -262,5 +332,3 @@ onUnmounted(() => {
         </div>
     </UserLayout>
 </template>
-
-</script>

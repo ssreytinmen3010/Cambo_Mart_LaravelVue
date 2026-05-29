@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { CreditCard, Truck, Wallet, CheckCircle2, ShieldCheck } from 'lucide-vue-next';
+import { Truck, Wallet, CheckCircle2, ShieldCheck, Clock3, X, QrCode, Download } from 'lucide-vue-next';
+import QRCode from 'qrcode';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
@@ -9,6 +10,7 @@ import { useStore } from '@/composables/useStore';
 const { cart, cartSubtotal, cartDiscount, cartTotal, clearCart, ensureCartLoaded } = useStore();
 const page = usePage();
 const authUser = computed(() => page.props.auth?.user ?? null);
+const errors = computed(() => page.props.errors ?? {});
 
 onMounted(() => {
     ensureCartLoaded();
@@ -18,10 +20,16 @@ onMounted(() => {
         form.value.phone = authUser.value.phone ?? form.value.phone;
         form.value.email = authUser.value.email ?? form.value.email;
     }
+
 });
 
 const method = ref('aba');
 const placing = ref(false);
+const showKhqrModal = ref(false);
+const paymentExpirySeconds = ref(5 * 60);
+const paymentTimer = ref(null);
+const bakongQrDataUrl = ref('');
+const bakongQrSvg = ref('');
 
 const methods = [
     // { id: 'card', name: 'Credit / Debit card', desc: 'Visa, Mastercard, JCB', icon: CreditCard },
@@ -30,6 +38,11 @@ const methods = [
 ];
 
 const total = computed(() => cartTotal.value);
+const qrAmount = computed(() => total.value.toFixed(2));
+const checkoutResult = computed(() => page.props.flash?.checkout ?? null);
+const bakongCheckout = computed(() => checkoutResult.value?.bakong ?? null);
+const paymentReference = computed(() => bakongCheckout.value?.md5 ?? `CAMBOMART-${qrAmount.value}-${form.value.phone || 'CHECKOUT'}`);
+const expiryLabel = computed(() => formatDuration(paymentExpirySeconds.value));
 
 const form = ref({
     name: '',
@@ -40,10 +53,68 @@ const form = ref({
     note: '',
 });
 
-function placeOrder() {
-    placing.value = true;
+function startPaymentTimer() {
+    clearPaymentTimer();
+    paymentExpirySeconds.value = 5 * 60;
 
-    const payment_method = method.value === 'aba' ? 'online' : 'cash';
+    paymentTimer.value = window.setInterval(() => {
+        if (paymentExpirySeconds.value <= 1) {
+            clearPaymentTimer();
+            paymentExpirySeconds.value = 0;
+            return;
+        }
+
+        paymentExpirySeconds.value -= 1;
+    }, 1000);
+}
+
+function clearPaymentTimer() {
+    if (paymentTimer.value) {
+        window.clearInterval(paymentTimer.value);
+        paymentTimer.value = null;
+    }
+}
+
+watch(
+    () => bakongCheckout.value?.qr,
+    async (qr) => {
+        if (!qr) return;
+
+        showKhqrModal.value = true;
+        startPaymentTimer();
+        await renderBakongQr();
+    },
+    { immediate: true }
+);
+
+function openKhqrModal() {
+    showKhqrModal.value = true;
+    startPaymentTimer();
+    renderBakongQr();
+}
+
+function closeKhqrModal() {
+    showKhqrModal.value = false;
+    clearPaymentTimer();
+}
+
+async function placeOrder() {
+    if (method.value === 'aba') {
+        openKhqrModal();
+        await nextTick();
+        submitOrder('online');
+        return;
+    }
+
+    submitOrder('cash');
+}
+
+function confirmOnlinePayment() {
+    closeKhqrModal();
+}
+
+function submitOrder(payment_method) {
+    placing.value = true;
 
     router.post(
         route('checkout.store'),
@@ -59,18 +130,84 @@ function placeOrder() {
                 placing.value = false;
             },
             onSuccess: () => {
-                clearCart();
+                if (payment_method === 'cash') {
+                    clearCart();
+                }
             },
         }
     );
 }
+
+async function renderBakongQr() {
+    const qrValue = bakongCheckout.value?.qr;
+
+    if (!qrValue) {
+        bakongQrDataUrl.value = '';
+        bakongQrSvg.value = '';
+        return;
+    }
+
+    try {
+        bakongQrDataUrl.value = await QRCode.toDataURL(qrValue, {
+            errorCorrectionLevel: 'M',
+            margin: 1,
+            width: 320,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff',
+            },
+        });
+        bakongQrSvg.value = '';
+    } catch (error) {
+        try {
+            bakongQrSvg.value = await QRCode.toString(qrValue, {
+                type: 'svg',
+                errorCorrectionLevel: 'M',
+                margin: 1,
+                width: 320,
+                color: {
+                    dark: '#0f172a',
+                    light: '#ffffff',
+                },
+            });
+            bakongQrDataUrl.value = '';
+        } catch (svgError) {
+            console.error('Bakong QR render failed:', error, svgError);
+            bakongQrDataUrl.value = '';
+            bakongQrSvg.value = '';
+        }
+    }
+}
+
+function downloadPaymentReference() {
+    if (!bakongQrDataUrl.value) return;
+
+    const link = document.createElement('a');
+
+    link.href = bakongQrDataUrl.value;
+    link.download = `${checkoutResult.value?.order_number ?? 'bakong-qr'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+function formatDuration(totalSeconds) {
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+    return `${minutes}:${seconds}`;
+}
+
+onBeforeUnmount(() => {
+    clearPaymentTimer();
+});
 </script>
 
 <template>
     <Head title="Checkout" />
 
     <UserLayout>
-        <div v-if="cart.length === 0" class="container mx-auto px-4 py-24 text-center">
+        <div v-if="cart.length === 0 && !checkoutResult" class="container mx-auto px-4 py-24 text-center">
             <h1 class="text-2xl font-bold">Your cart is empty</h1>
             <Link
                 :href="route('shop')"
@@ -168,6 +305,9 @@ function placeOrder() {
                                 <CheckCircle2 v-if="method === m.id" class="absolute top-3 right-3 h-5 w-5 text-primary" />
                             </label>
                         </div>
+                        <p v-if="errors.payment_method" class="mt-3 text-sm font-medium text-rose-600">
+                            {{ errors.payment_method }}
+                        </p>
 <!-- 
                         <div v-if="method === 'card'" class="mt-4 grid sm:grid-cols-2 gap-3">
                             <label class="block sm:col-span-2">
@@ -243,5 +383,106 @@ function placeOrder() {
                 </aside>
             </form>
         </div>
+
+        <Transition name="modal-fade">
+            <div v-if="showKhqrModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-md" @click="closeKhqrModal"></div>
+
+                <div class="relative w-full max-w-sm overflow-hidden rounded-[2rem] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+                    <button
+                        type="button"
+                        class="absolute right-4 top-4 z-10 h-10 w-10 rounded-full border border-slate-300/80 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        @click="closeKhqrModal"
+                    >
+                        <X class="mx-auto h-5 w-5" />
+                    </button>
+
+                    <div class="px-5 pt-5">
+                        <div class="flex items-center gap-3">
+                            <div class="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
+                                <QrCode class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p class="text-lg font-black text-slate-900">Bakong KHQR</p>
+                                <p class="text-sm text-slate-500">Scan to pay with Bakong KHQR</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 px-5 pb-5">
+                        <div class="overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+                            <div class="relative bg-emerald-500 px-4 py-3 text-center">
+                                <p class="text-xl font-black tracking-[0.45em] text-white">KHQR</p>
+                                <span class="absolute -bottom-2 right-6 h-4 w-4 rotate-45 bg-emerald-500"></span>
+                            </div>
+
+                            <div class="px-5 pb-5 pt-4">
+                                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">CAMBOMART</p>
+                                <div class="mt-1 flex items-end gap-2">
+                                    <span class="text-4xl font-black leading-none text-slate-900">${{ qrAmount }}</span>
+                                    <span class="pb-1 text-base font-semibold text-slate-500">USD</span>
+                                </div>
+
+                                <div class="my-4 h-px bg-slate-200"></div>
+
+                                <div class="mx-auto w-fit rounded-2xl bg-white p-3">
+                                    <img
+                                        v-if="bakongQrDataUrl"
+                                        :src="bakongQrDataUrl"
+                                        alt="Bakong QR"
+                                        class="h-[320px] w-[320px] rounded-xl bg-white object-contain"
+                                    />
+                                    <div
+                                        v-else-if="bakongQrSvg"
+                                        class="h-[320px] w-[320px] overflow-hidden rounded-xl bg-white"
+                                        v-html="bakongQrSvg"
+                                    ></div>
+                                    <div
+                                        v-else
+                                        class="grid h-[320px] w-[320px] place-items-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-500"
+                                    >
+                                        Generating QR...
+                                    </div>
+                                </div>
+                                <div class="mt-5 flex items-center justify-center text-center">
+                                    <button
+                                        type="button"
+                                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                                        @click="downloadPaymentReference"
+                                    >
+                                        <span class="grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white shadow-sm">
+                                            <Download class="h-3.5 w-3.5" />
+                                        </span>
+                                        Download
+                                    </button>
+                                </div>
+
+                                <div class="mt-6 flex items-end justify-between gap-4">
+                                    <div>
+                                        <p class="flex items-center gap-1.5 text-xs text-slate-500">
+                                            <Clock3 class="h-3.5 w-3.5" />
+                                            Expires in
+                                        </p>
+                                        <p class="mt-1 font-mono text-lg font-black text-slate-900">{{ expiryLabel }}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="rounded-full bg-emerald-500 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
+                                        :disabled="placing || paymentExpirySeconds === 0"
+                                        @click="confirmOnlinePayment"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center text-[11px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                                Powered by Cambomart Pay
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </UserLayout>
 </template>
