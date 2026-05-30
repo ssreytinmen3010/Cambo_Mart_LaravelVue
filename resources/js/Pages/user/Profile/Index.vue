@@ -24,15 +24,10 @@ const profileForm = useForm({
 const showCheckoutResult = ref(false);
 const checkoutResult = computed(() => page.props.flash?.checkout ?? null);
 const checkoutPaymentStatus = computed(() => checkoutResult.value?.payment_status ?? null);
-const checkoutTitle = computed(() => {
-    if (!checkoutPaymentStatus.value) return 'Success';
-    return checkoutPaymentStatus.value === 'PAID' ? 'Success' : 'Awaiting payment';
-});
+const checkoutTitle = computed(() => 'Order placed');
 const checkoutDescription = computed(() => {
     if (!checkoutResult.value) return '';
-    const paymentText = checkoutPaymentStatus.value ?? 'UNKNOWN';
-    if (paymentText === 'PAID') return `Order ${checkoutResult.value.order_number} placed. Payment: PAID.`;
-    return `Order ${checkoutResult.value.order_number} placed. Payment: ${paymentText}.`;
+    return `Order ${checkoutResult.value.order_number} placed. Pay cash on delivery when your order arrives.`;
 });
 
 onMounted(() => {

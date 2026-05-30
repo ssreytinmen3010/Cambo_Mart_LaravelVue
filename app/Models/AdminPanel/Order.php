@@ -38,21 +38,12 @@ class Order extends Model
         'order_status',   // "PENDING", "COMPLETED", "CANCELLED", "REFUNDED"
         'payment_status', // "PENDING", "PAID", "FAILED", "REFUNDED"
         'payment_method', // "online", "cash"
-        'bakong_qr',
-        'bakong_md5',
-        'bakong_expires_at',
-        'bakong_transaction_hash',
-        'bakong_verified_at',
-        'bakong_response',
     ];
 
     protected $casts = [
         'subtotal_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
-        'bakong_expires_at' => 'datetime',
-        'bakong_verified_at' => 'datetime',
-        'bakong_response' => 'array',
         'created_at' => 'datetime',
     ];
 

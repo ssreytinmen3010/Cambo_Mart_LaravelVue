@@ -134,7 +134,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/reviews/my', [UserReviewController::class, 'myRatings'])->name('user.reviews.my');
 
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/checkout/bakong-qr/{order_number}', [CheckoutController::class, 'qrImage'])->name('checkout.bakong-qr');
 });
 
 Route::prefix('')->group(function () {

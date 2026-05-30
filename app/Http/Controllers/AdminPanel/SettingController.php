@@ -23,12 +23,6 @@ class SettingController extends Controller
             'phone' => Setting::get('phone'),
             'map_lat' => Setting::get('map_lat'),
             'map_long' => Setting::get('map_long'),
-            'bakong_account_id' => Setting::get('bakong_account_id', config('services.bakong.account_id')),
-            'bakong_merchant_id' => Setting::get('bakong_merchant_id', config('services.bakong.merchant_id', '123456')),
-            'bakong_merchant_name' => Setting::get('bakong_merchant_name', config('services.bakong.merchant_name', 'DAVIT YEM')),
-            'bakong_merchant_city' => Setting::get('bakong_merchant_city', config('services.bakong.merchant_city', 'Phnom Penh')),
-            'bakong_acquiring_bank' => Setting::get('bakong_acquiring_bank', config('services.bakong.acquiring_bank', 'Dev Bank')),
-            'bakong_qr_timeout_minutes' => Setting::get('bakong_qr_timeout_minutes', config('services.bakong.qr_timeout_minutes', 10)),
         ];
 
         return Inertia::render('Admin/Settings/Index', [
@@ -88,12 +82,6 @@ class SettingController extends Controller
             'phone' => 'required|string|max:20',
             'map_lat' => 'required|string|max:50',
             'map_long' => 'required|string|max:50',
-            'bakong_account_id' => 'nullable|string|max:255',
-            'bakong_merchant_id' => 'nullable|string|max:255',
-            'bakong_merchant_name' => 'nullable|string|max:255',
-            'bakong_merchant_city' => 'nullable|string|max:255',
-            'bakong_acquiring_bank' => 'nullable|string|max:255',
-            'bakong_qr_timeout_minutes' => 'nullable|integer|min:1|max:1440',
         ]);
 
         Setting::set('store_name', $validated['store_name']);
@@ -102,12 +90,6 @@ class SettingController extends Controller
         Setting::set('phone', $validated['phone']);
         Setting::set('map_lat', $validated['map_lat']);
         Setting::set('map_long', $validated['map_long']);
-        Setting::set('bakong_account_id', $validated['bakong_account_id'] ?? null);
-        Setting::set('bakong_merchant_id', $validated['bakong_merchant_id'] ?? null);
-        Setting::set('bakong_merchant_name', $validated['bakong_merchant_name'] ?? null);
-        Setting::set('bakong_merchant_city', $validated['bakong_merchant_city'] ?? null);
-        Setting::set('bakong_acquiring_bank', $validated['bakong_acquiring_bank'] ?? null);
-        Setting::set('bakong_qr_timeout_minutes', $validated['bakong_qr_timeout_minutes'] ?? null);
 
         if (isset($validated['logo'])) {
             Setting::set('logo', $validated['logo']);
