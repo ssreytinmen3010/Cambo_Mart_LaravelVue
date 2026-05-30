@@ -36,10 +36,10 @@
           <button
             type="button"
             :class="[
-              'w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group relative',
+              'w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group relative border-0 bg-transparent',
               isGroupActive(item)
-                ? 'bg-green-500/10 text-green-400 font-bold'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                ? 'bg-green-500/10 font-bold'
+                : 'hover:bg-slate-800'
             ]"
             @click="toggleGroup(item.title)"
           >
@@ -48,13 +48,23 @@
               class="absolute left-0 top-2 bottom-2 w-1 bg-green-500 rounded-r-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"
             ></div>
 
-            <v-icon :color="isGroupActive(item) ? 'green-accent-3' : ''" :class="[collapsed ? 'mx-auto' : '', 'transition-colors']">
+            <v-icon :class="iconClasses(isGroupActive(item), collapsed)">
               {{ item.icon }}
             </v-icon>
 
-            <span v-if="!collapsed" class="text-sm tracking-wide flex-1 text-left">{{ item.title }}</span>
+            <span
+              v-if="!collapsed"
+              class="text-sm tracking-wide flex-1 text-left transition-colors"
+              :class="isGroupActive(item) ? 'text-green-400' : 'text-slate-400 group-hover:text-slate-100'"
+            >
+              {{ item.title }}
+            </span>
 
-            <v-icon v-if="!collapsed" size="18" class="text-slate-500">
+            <v-icon
+              v-if="!collapsed"
+              size="18"
+              :class="isGroupActive(item) ? 'text-green-400' : 'text-slate-500 group-hover:text-slate-300'"
+            >
               {{ isGroupExpanded(item.title) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
             </v-icon>
 
@@ -75,8 +85,13 @@
                   : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
               ]"
             >
-              <v-icon :color="isActive(child.path) ? 'green-accent-3' : ''" size="18">{{ child.icon }}</v-icon>
-              <span class="text-sm tracking-wide">{{ child.title }}</span>
+              <v-icon size="18" :class="iconClasses(isActive(child.path))">{{ child.icon }}</v-icon>
+              <span
+                class="text-sm tracking-wide transition-colors"
+                :class="isActive(child.path) ? 'text-green-400' : 'text-slate-400 group-hover:text-slate-100'"
+              >
+                {{ child.title }}
+              </span>
             </Link>
           </div>
         </div>
@@ -96,10 +111,7 @@
             class="absolute left-0 top-2 bottom-2 w-1 bg-green-500 rounded-r-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"
           ></div>
 
-          <v-icon 
-            :color="isActive(item.path) ? 'green-accent-3' : ''"
-            :class="[collapsed ? 'mx-auto' : '', 'transition-colors']"
-          >
+          <v-icon :class="iconClasses(isActive(item.path), collapsed)">
             {{ item.icon }}
           </v-icon>
           
@@ -119,7 +131,7 @@
         @click="$emit('toggle')"
         class="w-full flex items-center justify-center py-2.5 rounded-lg bg-slate-800/40 hover:bg-slate-800 text-slate-400 hover:text-white transition-all border border-slate-700/30"
       >
-        <v-icon size="20">{{ collapsed ? 'mdi-chevron-right' : 'mdi-backburger' }}</v-icon>
+        <v-icon size="20" class="text-slate-400 group-hover:text-white transition-colors">{{ collapsed ? 'mdi-chevron-right' : 'mdi-backburger' }}</v-icon>
         <span v-if="!collapsed" class="ml-2 text-sm font-semibold">Hide Panel</span>
       </button>
     </div>
@@ -234,6 +246,14 @@ function isGroupExpanded(title) {
 
 function isGroupActive(item) {
   return item.children?.some((child) => isActive(child.path)) ?? false;
+}
+
+function iconClasses(active, collapsed = false) {
+  return [
+    collapsed ? 'mx-auto' : '',
+    'transition-colors',
+    active ? '!text-green-400' : '!text-slate-400 group-hover:!text-slate-100',
+  ];
 }
 
 const isActive = (path) => {

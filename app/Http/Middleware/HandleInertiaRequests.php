@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Setting;
+use App\Models\PromotionSeason;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -54,6 +55,16 @@ class HandleInertiaRequests extends Middleware
             ];
         }
 
+        try {
+            $promotionSeason = PromotionSeason::query()
+                ->active()
+                ->running()
+                ->latest()
+                ->first();
+        } catch (\Exception $e) {
+            $promotionSeason = null;
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -65,6 +76,10 @@ class HandleInertiaRequests extends Middleware
                 'checkout' => fn () => $request->session()->get('checkout'),
             ],
             'appSettings' => $appSettings,
+            'promotionSeason' => $promotionSeason ? [
+                'image' => $promotionSeason->image,
+                'code' => $promotionSeason->code,
+            ] : null,
         ];
     }
 }
