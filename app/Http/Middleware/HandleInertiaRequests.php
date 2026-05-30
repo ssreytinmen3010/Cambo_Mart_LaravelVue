@@ -38,6 +38,8 @@ class HandleInertiaRequests extends Middleware
                 'address' => Setting::get('address'),
                 'phone' => Setting::get('phone'),
                 'email' => Setting::get('email'),
+                'map_lat' => Setting::get('map_lat', '11.5564'),
+                'map_long' => Setting::get('map_long', '104.9282'),
             ];
         } catch (\Exception $e) {
             $appSettings = [
@@ -47,6 +49,8 @@ class HandleInertiaRequests extends Middleware
                 'address' => null,
                 'phone' => null,
                 'email' => null,
+                'map_lat' => '11.5564',
+                'map_long' => '104.9282',
             ];
         }
 

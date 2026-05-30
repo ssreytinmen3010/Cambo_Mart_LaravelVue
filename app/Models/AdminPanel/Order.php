@@ -35,6 +35,9 @@ class Order extends Model
         'subtotal_amount',
         'discount_amount',
         'total_amount',
+        'delivery_fee',
+        'discount_type',
+        'discount_value',
         'order_status',   // "PENDING", "COMPLETED", "CANCELLED", "REFUNDED"
         'payment_status', // "PENDING", "PAID", "FAILED", "REFUNDED"
         'payment_method', // "online", "cash"
@@ -44,6 +47,8 @@ class Order extends Model
         'subtotal_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'delivery_fee' => 'decimal:2',
+        'discount_value' => 'decimal:2',
         'created_at' => 'datetime',
     ];
 
@@ -131,5 +136,15 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function deliveries()
+    {
+        return $this->hasMany(\App\Models\Delivery::class);
+    }
+
+    public function promotionSeasons()
+    {
+        return $this->hasMany(\App\Models\PromotionSeason::class);
     }
 }

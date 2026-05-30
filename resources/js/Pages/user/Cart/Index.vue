@@ -1,18 +1,20 @@
 <script setup>
 import { computed, onMounted } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ShoppingBag, Minus, Plus, Trash2, ArrowRight } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import { useStore } from '@/composables/useStore';
 
 const { cart, removeFromCart, updateQty, clearCart, cartSubtotal, cartDiscount, cartTotal, ensureCartLoaded } = useStore();
+const page = usePage();
 
 onMounted(() => {
     ensureCartLoaded();
 });
 
 const total = computed(() => cartTotal.value);
+const deliveryFeePerKg = computed(() => Number(page.props.delivery?.fee_amount_per ?? 0));
 </script>
 
 <template>
@@ -117,6 +119,10 @@ const total = computed(() => cartTotal.value);
                         <div class="flex justify-between">
                             <span class="text-muted-foreground">Discount</span>
                             <span class="font-medium text-destructive">-${{ cartDiscount.toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Delivery</span>
+                            <span class="font-medium text-slate-700">${{ deliveryFeePerKg.toFixed(2) }} / 1 KG</span>
                         </div>
                         <div class="border-t pt-3 flex justify-between">
                             <span class="font-semibold">Total</span>

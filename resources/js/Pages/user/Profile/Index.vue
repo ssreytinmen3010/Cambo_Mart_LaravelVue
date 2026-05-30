@@ -123,6 +123,22 @@ const orderStatusClasses = (status) => {
     return 'bg-slate-100 text-slate-600';
 };
 
+const promotionTypeLabel = (type) => {
+    const value = String(type ?? '').toUpperCase();
+    if (value === 'PERCENTAGE') return 'Percentage';
+    if (value === 'FIX') return 'Fix';
+    if (value === 'FREE_DELIVERY') return 'Free Delivery';
+    return type || '—';
+};
+
+const promotionValueLabel = (order) => {
+    const type = String(order?.promotion_type ?? '').toUpperCase();
+    const value = Number(order?.promotion_value ?? 0);
+
+    if (!type) return '—';
+    return type === 'PERCENTAGE' ? `${value.toFixed(0)}%` : `$${value.toFixed(2)}`;
+};
+
 const selectedInvoiceOrder = ref(null);
 const showInvoiceModal = ref(false);
 
@@ -246,16 +262,28 @@ const downloadReceiptPdf = () => {
     doc.setFontSize(10);
     doc.setTextColor(15, 23, 42);
     doc.text('Subtotal', 118, totalsY);
-    // doc.text('Tax', 118, totalsY + 7);
-    doc.text('Total', 118, totalsY + 14);
+    doc.text('Product discount', 118, totalsY + 7);
+    doc.text('Delivery', 118, totalsY + 14);
+    doc.text('Total', 118, totalsY + 28);
     doc.text(money(order.subtotal), right, totalsY, { align: 'right' });
-    // doc.text('10%', right, totalsY + 7, { align: 'right' });
-    doc.text(money(order.total), right, totalsY + 14, { align: 'right' });
+    doc.text(`-${money(order.discount).slice(1)}`, right, totalsY + 7, { align: 'right' });
+    doc.text(money(order.delivery_fee), right, totalsY + 14, { align: 'right' });
+    doc.setDrawColor(226, 232, 240);
+    doc.line(left, totalsY + 19, right, totalsY + 19);
+    doc.text(money(order.total), right, totalsY + 28, { align: 'right' });
+    doc.setDrawColor(226, 232, 240);
+    doc.line(left, totalsY + 33, right, totalsY + 33);
+
+    const promoY = totalsY + 38;
+    doc.setFontSize(8.5);
+    doc.text('Promotion Season', left, promoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`: ${String(order.promotion_code ?? 'None')} · ${String(promotionTypeLabel(order.promotion_type))} · ${String(promotionValueLabel(order))}`, left + 34, promoY);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
-    doc.text('Payment Terms: Payment due upon receipt.', left, totalsY + 4);
+    doc.text('Payment Terms: Payment due upon receipt.', left, promoY + 6);
     doc.text('Thank you for shopping with CamboMart.', pageWidth / 2, 286, { align: 'center' });
 
     doc.save(`${order.id}-invoice.pdf`);
@@ -336,6 +364,39 @@ const downloadReceiptPdf = () => {
                                     <p>{{ selectedInvoiceOrder?.address?.phone ?? '' }}</p>
                                     <p class="mt-1">{{ selectedInvoiceOrder?.address?.address ?? 'No address provided' }}</p>
                                     <p v-if="selectedInvoiceOrder?.address?.floor" class="mt-1">Floor: {{ selectedInvoiceOrder.address.floor }}</p>
+                                    <p v-if="selectedInvoiceOrder?.address?.qty_kilo != null" class="mt-1">Qty Kilo: {{ Number(selectedInvoiceOrder.address.qty_kilo).toFixed(2) }} KG</p>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 p-4">
+                                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Delivery & Promotion</p>
+                                <div class="mt-3 space-y-2 text-sm text-slate-700">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <span>Delivery fee</span>
+                                        <span class="font-semibold">${{ Number(selectedInvoiceOrder?.delivery_fee ?? 0).toFixed(2) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-4">
+                                        <span>Discount type</span>
+                                        <span class="font-semibold">{{ selectedInvoiceOrder?.discount_type || '—' }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-4">
+                                        <span>Discount value</span>
+                                        <span class="font-semibold text-rose-600">${{ Number(selectedInvoiceOrder?.discount_value ?? 0).toFixed(2) }}</span>
+                                    </div>
+                                    <div class="border-t border-slate-200 pt-2">
+                                        <div class="flex items-center justify-between gap-4">
+                                            <span>Promotion code</span>
+                                            <span class="font-semibold">{{ selectedInvoiceOrder?.promotion_code || 'None' }}</span>
+                                        </div>
+                                        <div class="mt-1 flex items-center justify-between gap-4">
+                                            <span>Promotion type</span>
+                                            <span class="font-semibold">{{ promotionTypeLabel(selectedInvoiceOrder?.promotion_type) }}</span>
+                                        </div>
+                                        <div class="mt-1 flex items-center justify-between gap-4">
+                                            <span>Promotion value</span>
+                                            <span class="font-semibold text-rose-600">{{ promotionValueLabel(selectedInvoiceOrder) }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -369,13 +430,28 @@ const downloadReceiptPdf = () => {
                                         <span>${{ Number(selectedInvoiceOrder?.subtotal ?? 0).toFixed(2) }}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span>Discount</span>
-                                        <span>-${{ Number(selectedInvoiceOrder?.discount ?? 0).toFixed(2) }}</span>
+                                        <span class="text-rose-600 font-medium">Product discount</span>
+                                        <span class="text-rose-600 font-semibold">-${{ Number(selectedInvoiceOrder?.discount ?? 0).toFixed(2) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Delivery fee</span>
+                                        <span>${{ Number(selectedInvoiceOrder?.delivery_fee ?? 0).toFixed(2) }}</span>
+                                    </div>
+                                    <div class="h-px bg-slate-200"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Promotion</span>
+                                        <span class="font-semibold">
+                                            {{ selectedInvoiceOrder?.promotion_code || 'None' }}
+                                            <span v-if="selectedInvoiceOrder?.promotion_code && selectedInvoiceOrder?.promotion_type" class="ml-1">
+                                                (<span class="text-rose-600">{{ selectedInvoiceOrder?.promotion_type === 'PERCENTAGE' ? `${Number(selectedInvoiceOrder?.promotion_value || 0).toFixed(0)}%` : `$${Number(selectedInvoiceOrder?.promotion_value || 0).toFixed(2)}` }}</span>)
+                                            </span>
+                                        </span>
                                     </div>
                                     <div class="flex items-center justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
                                         <span>Total</span>
                                         <span>${{ Number(selectedInvoiceOrder?.total ?? 0).toFixed(2) }}</span>
                                     </div>
+                                    <div class="h-px bg-slate-200"></div>
                                 </div>
                             </div>
 

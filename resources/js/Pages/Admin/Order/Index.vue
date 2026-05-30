@@ -103,16 +103,20 @@ function getItemCode(item) {
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-[1400px] divide-y divide-slate-200">
+        <table class="min-w-[1600px] divide-y divide-slate-200">
         <thead class="bg-slate-50">
           <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
             <th class="px-6 py-3">Order</th>
             <th class="px-6 py-3">Customer</th>
             <th class="px-6 py-3">Address</th>
-            <!-- <th class="px-6 py-3">Promotion</th> -->
+            <th class="px-6 py-3 text-right">Qty Kilo</th>
+            <th class="px-6 py-3">Promotion Season</th>
             <th class="px-6 py-3 text-center">Items</th>
+            <th class="px-6 py-3 text-right">Delivery Fee</th>
+            <!-- <th class="px-6 py-3 text-center">Discount Type</th> -->
+            <!-- <th class="px-6 py-3 text-right">Discount Value</th> -->
             <th class="px-6 py-3 text-right">Subtotal</th>
-            <th class="px-6 py-3 text-right">Discount</th>
+            <th class="px-6 py-3 text-right">Product Discount</th>
             <th class="px-6 py-3 text-right">Total</th>
             <th class="px-6 py-3 text-center">Method</th>
             <th class="px-6 py-3 text-center">Order Status</th>
@@ -140,13 +144,18 @@ function getItemCode(item) {
                 {{ o.customer_address || '—' }}
               </div>
             </td>
-            <!-- <td class="px-6 py-4">
+            <td class="px-6 py-4 text-right">
+              <div class="text-[12px] font-black text-slate-700">{{ Number(o.delivery_qty_kilo || 0).toFixed(2) }} KG</div>
+            </td>
+            <td class="px-6 py-4">
                <div v-if="o.promotion_code !== 'None'" class="flex flex-col gap-0.5">
-                  <span class="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-black border border-green-100 uppercase w-fit">{{ o.promotion_code }}</span>
-                  <span class="text-[9px] text-slate-400 font-bold ml-1">{{ o.promotion_description }}</span>
+                  <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-black border border-emerald-100 uppercase w-fit">{{ o.promotion_code }}</span>
+                  <span class="text-[9px] text-slate-400 font-bold ml-1">
+                    {{ o.promotion_type || '—' }}{{ o.promotion_value !== null && o.promotion_value !== undefined ? ` · ${o.promotion_type === 'PERCENTAGE' ? o.promotion_value + '%' : '$' + Number(o.promotion_value).toFixed(2)}` : '' }}
+                  </span>
                </div>
                <span v-else class="text-[10px] font-bold text-slate-400 italic">None</span>
-            </td> -->
+            </td>
              <td class="px-6 py-4">
                 <div class="max-w-[360px]">
                   <div class="flex items-center justify-between mb-1.5">
@@ -201,7 +210,18 @@ function getItemCode(item) {
                 </div>
              </td>
             <td class="px-6 py-4 text-right">
-              <div class="text-[12px] font-black text-slate-700">${{ o.subtotal }}</div>
+              <div class="text-[12px] font-black text-slate-700">${{ Number(o.delivery_fee || 0).toFixed(2) }}</div>
+            </td>
+            <!-- <td class="px-6 py-4 text-center">
+              <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-600">
+                {{ o.discount_type || '—' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="text-[12px] font-black text-slate-700">${{ Number(o.discount_value || 0).toFixed(2) }}</div>
+            </td> -->
+            <td class="px-6 py-4 text-right">
+              <div class="text-[12px] font-black text-slate-700">${{ Number(o.subtotal_with_delivery || 0).toFixed(2) }}</div>
             </td>
             <td class="px-6 py-4 text-right">
               <div class="text-[12px] font-black" :class="o.discount > 0 ? 'text-rose-600' : 'text-slate-400'">
@@ -209,7 +229,7 @@ function getItemCode(item) {
               </div>
             </td>
             <td class="px-6 py-4 text-right">
-              <div class="text-sm font-black text-emerald-600">${{ o.total_amount }}</div>
+              <div class="text-sm font-black text-emerald-600">${{ Number(o.grand_total || 0).toFixed(2) }}</div>
             </td>
 
             <td class="px-6 py-4 text-center">
@@ -264,7 +284,7 @@ function getItemCode(item) {
           </div>
 
           <div class="p-8 overflow-y-auto custom-scrollbar flex-1 min-h-0 bg-slate-50/30">
-            <div class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <div class="rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order No.</p>
                 <p class="mt-2 text-lg font-black text-slate-900">#{{ viewOrder.order_number }}</p>
@@ -340,6 +360,10 @@ function getItemCode(item) {
                     <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Address</p>
                     <p class="text-sm text-slate-700 leading-6">{{ viewOrder.customer_address || 'No address provided' }}</p>
                   </div>
+                  <div>
+                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Qty Kilo</p>
+                    <p class="text-sm font-black text-slate-900">{{ Number(viewOrder.delivery_qty_kilo || 0).toFixed(2) }} KG</p>
+                  </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subtotal</p>
@@ -349,12 +373,27 @@ function getItemCode(item) {
                       <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discount</p>
                       <p class="mt-1 text-sm font-black text-rose-600">-${{ viewOrder.discount }}</p>
                     </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Delivery fee</p>
+                      <p class="mt-1 text-sm font-black text-slate-900">${{ Number(viewOrder.delivery_fee || 0).toFixed(2) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discount type</p>
+                      <p class="mt-1 text-sm font-black text-slate-900">{{ viewOrder.discount_type || '—' }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4 col-span-2">
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discount value</p>
+                      <p class="mt-1 text-sm font-black text-rose-600">${{ Number(viewOrder.discount_value || 0).toFixed(2) }}</p>
+                    </div>
                   </div>
                   <div class="rounded-2xl bg-amber-50 p-4 border border-amber-100">
-                    <p class="text-[10px] font-black text-amber-700 uppercase tracking-widest">Promotion</p>
+                    <p class="text-[10px] font-black text-amber-700 uppercase tracking-widest">Promotion Season</p>
                     <p class="mt-1 text-sm font-black text-amber-800">{{ viewOrder.promotion_code }}</p>
-                    <p v-if="viewOrder.promotion_description" class="mt-1 text-xs text-amber-700/80 leading-5">
-                      {{ viewOrder.promotion_description }}
+                    <p class="mt-1 text-xs text-amber-700/80 leading-5">
+                      Type: {{ viewOrder.promotion_type || '—' }}
+                    </p>
+                    <p class="mt-1 text-xs text-amber-700/80 leading-5">
+                      Value: {{ viewOrder.promotion_type === 'PERCENTAGE' ? `${Number(viewOrder.promotion_value || 0).toFixed(0)}%` : `$${Number(viewOrder.promotion_value || 0).toFixed(2)}` }}
                     </p>
                   </div>
                 </div>
@@ -392,9 +431,18 @@ function getItemCode(item) {
 
                   <!-- Summary Footer -->
                   <div class="p-6 bg-slate-50 border-t border-slate-100 space-y-3">
+                    <div v-if="viewOrder.promotion_code !== 'None'" class="flex justify-between items-center text-xs font-bold text-slate-500">
+                      <span>Promotion Season</span>
+                      <span class="text-slate-700">
+                        {{ viewOrder.promotion_code }}
+                        <span class="ml-1 text-[10px] text-slate-400">
+                          ({{ viewOrder.promotion_type || '—' }}, {{ viewOrder.promotion_type === 'PERCENTAGE' ? `${Number(viewOrder.promotion_value || 0).toFixed(0)}%` : `$${Number(viewOrder.promotion_value || 0).toFixed(2)}` }})
+                        </span>
+                      </span>
+                    </div>
                     <div class="flex justify-between items-center text-xs font-bold text-slate-500">
                       <span>Subtotal</span>
-                      <span>${{ viewOrder.subtotal }}</span>
+                      <span>${{ Number(viewOrder.subtotal_with_delivery || 0).toFixed(2) }}</span>
                     </div>
                     <div class="flex justify-between items-center text-xs font-bold text-slate-500">
                        <div class="flex items-center gap-2">
@@ -406,7 +454,7 @@ function getItemCode(item) {
                     <div class="h-px bg-slate-200 my-2"></div>
                     <div class="flex justify-between items-center">
                       <span class="text-sm font-black text-slate-800 uppercase tracking-widest">Total Amount</span>
-                      <span class="text-2xl font-black text-emerald-600">${{ viewOrder.total_amount }}</span>
+                      <span class="text-2xl font-black text-emerald-600">${{ Number(viewOrder.grand_total || 0).toFixed(2) }}</span>
                     </div>
                   </div>
                 </div>

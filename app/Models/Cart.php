@@ -37,6 +37,16 @@ class Cart extends Model
         return $this->hasMany(CartItem::class, 'cart_id');
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class);
+    }
+
+    public function promotionSeasons(): HasMany
+    {
+        return $this->hasMany(PromotionSeason::class);
+    }
+
     public function recalculateTotals(): self
     {
         // Subtotal is before discount, total_amount is after discount.

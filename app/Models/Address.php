@@ -17,6 +17,11 @@ class Address extends Model
         'phone',
         'address',
         'floor',
+        'qty_kilo',
+    ];
+
+    protected $casts = [
+        'qty_kilo' => 'decimal:3',
     ];
 
     public function user()

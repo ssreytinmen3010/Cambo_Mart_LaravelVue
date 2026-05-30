@@ -11,7 +11,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'address', 'items.product', 'promotion.product']);
+        $query = Order::with(['user', 'address', 'items.product', 'promotionSeasons']);
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
@@ -20,7 +20,7 @@ class OrderController extends Controller
                       $uq->where('name', 'like', '%' . $request->search . '%')
                          ->orWhere('email', 'like', '%' . $request->search . '%');
                   })
-                  ->orWhereHas('promotion', function ($pq) use ($request) {
+                  ->orWhereHas('promotionSeasons', function ($pq) use ($request) {
                       $pq->where('code', 'like', '%' . $request->search . '%');
                   });
             });
@@ -41,49 +41,66 @@ class OrderController extends Controller
         $orders = $query->latest()
             ->paginate(10)
             ->withQueryString()
-            ->through(fn ($order) => [
-                'id' => $order->id,
-                'order_number' => $order->order_number,
-                'customer_name' => $order->user ? $order->user->name : 'Guest',
-                'customer_image' => $order->user ? $order->user->image : null,
-                'customer_address' => $order->address
-                    ? trim($order->address->address . ($order->address->floor ? (', Floor ' . $order->address->floor) : ''))
-                    : null,
-                'promotion_code' => $order->promotion ? $order->promotion->code : 'None',
-                'promotion_description' => $order->promotion ? $order->promotion->description : null,
-                'subtotal' => $order->subtotal_amount,
-                'discount' => $order->discount_amount,
-                'total_amount' => $order->total_amount,
-                'order_status' => $order->order_status,
-                'payment_status' => $order->payment_status,
-                'payment_method' => $order->payment_method ? strtoupper($order->payment_method) : null,
-                'status_color' => $order->order_status_color,
-                'payment_color' => $order->payment_status_color,
-                'created_at' => $order->created_at->format('Y-m-d H:i'),
-                'items' => $order->items->map(function ($item) use ($order) {
-                    $itemDiscount = 0;
-                    $promo = $order->promotion;
-                    
-                    if ($promo && $promo->promo_type === 'PERCENTAGE') {
-                        $isPromoProduct = ($promo->product_id == $item->product_id);
-                        $isGlobalPromo = (!$promo->product_id);
-                        if ($isPromoProduct || $isGlobalPromo) {
-                            $itemDiscount = ($item->qty * $item->unit_price * $promo->discount_value) / 100;
-                        }
-                    }
+            ->through(function ($order) {
+                $itemsSubtotal = $order->items->sum(fn ($item) => (float) $item->qty * (float) $item->unit_price);
+                $deliveryFee = (float) ($order->delivery_fee ?? 0);
+                $discountAmount = (float) ($order->discount_amount ?? 0);
+                $subtotalWithDelivery = $itemsSubtotal + $deliveryFee;
+                $grandTotal = max(0, $itemsSubtotal - $discountAmount) + $deliveryFee;
+                $promotionSeason = $order->promotionSeasons->first();
 
-                    return [
-                        'id' => $item->id,
-                        'product_name' => $item->product ? $item->product->name : 'Unknown Product',
-                        'product_code' => $item->product ? $item->product->product_code : null,
-                        'image' => $item->product ? $item->product->image : null,
-                        'qty' => $item->qty,
-                        'unit_price' => $item->unit_price,
-                        'line_total' => $item->line_total,
-                        'discount' => round($itemDiscount, 2),
-                    ];
-                }),
-            ]);
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->user ? $order->user->name : 'Guest',
+                    'customer_image' => $order->user ? $order->user->image : null,
+                    'customer_address' => $order->address
+                        ? trim($order->address->address . ($order->address->floor ? (', Floor ' . $order->address->floor) : ''))
+                        : null,
+                    'delivery_qty_kilo' => $order->address?->qty_kilo,
+                    'promotion_code' => $promotionSeason?->code ?? 'None',
+                    'promotion_description' => $promotionSeason
+                        ? trim(sprintf('%s %s', $promotionSeason->promotion_type ?? 'Coupon', $promotionSeason->promotion_type === 'PERCENTAGE'
+                            ? ($promotionSeason->promotion_value . '%')
+                            : ('$' . number_format((float) $promotionSeason->promotion_value, 2))))
+                        : null,
+                    'promotion_type' => $promotionSeason?->promotion_type,
+                    'promotion_value' => $promotionSeason?->promotion_value,
+                    'subtotal' => $itemsSubtotal,
+                    'subtotal_with_delivery' => $subtotalWithDelivery,
+                    'discount' => $discountAmount,
+                    'total_amount' => $order->total_amount,
+                    'delivery_fee' => $deliveryFee,
+                    'grand_total' => $grandTotal,
+                    'discount_type' => $order->discount_type,
+                    'discount_value' => $order->discount_value,
+                    'order_status' => $order->order_status,
+                    'payment_status' => $order->payment_status,
+                    'payment_method' => $order->payment_method ? strtoupper($order->payment_method) : null,
+                    'status_color' => $order->order_status_color,
+                    'payment_color' => $order->payment_status_color,
+                    'created_at' => $order->created_at->format('Y-m-d H:i'),
+                    'items' => $order->items->map(function ($item) use ($order) {
+                        $itemDiscount = 0;
+                        $promoSeason = $order->promotionSeasons->first();
+
+                        if ($promoSeason && $promoSeason->promotion_type === 'PERCENTAGE') {
+                            $itemDiscount = ($item->qty * $item->unit_price * (float) $promoSeason->promotion_value) / 100;
+                        }
+
+                        return [
+                            'id' => $item->id,
+                            'product_name' => $item->product ? $item->product->name : 'Unknown Product',
+                            'product_code' => $item->product ? $item->product->product_code : null,
+                            'image' => $item->product ? $item->product->image : null,
+                            'qty' => $item->qty,
+                            'unit_price' => $item->unit_price,
+                            'line_total' => $item->line_total,
+                            'discount' => round($itemDiscount, 2),
+                        ];
+                    }),
+                ];
+            });
 
         return Inertia::render('Admin/Order/Index', [
             'orders' => $orders,

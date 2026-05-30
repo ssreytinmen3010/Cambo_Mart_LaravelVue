@@ -9,10 +9,13 @@ use App\Http\Controllers\AdminPanel\BrandController;
 use App\Http\Controllers\AdminPanel\CategoryController;
 use App\Http\Controllers\AdminPanel\ProductController;
 use App\Http\Controllers\AdminPanel\PromotionController;
+use App\Http\Controllers\AdminPanel\PromotionSeasonController;
+use App\Http\Controllers\AdminPanel\DeliveryController;
 use App\Http\Controllers\AdminPanel\OrderController;
 use App\Http\Controllers\AdminPanel\ReviewController;
 use App\Http\Controllers\AdminPanel\LocationController;
 use App\Http\Controllers\AdminPanel\ContactController;
+use App\Models\Delivery;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\CheckoutController;
@@ -133,6 +136,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/user/reviews', [UserReviewController::class, 'store'])->name('user.reviews.store');
     Route::get('/user/reviews/my', [UserReviewController::class, 'myRatings'])->name('user.reviews.my');
 
+    Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.apply-coupon');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 });
 
@@ -182,7 +186,16 @@ Route::prefix('')->group(function () {
             'products' => $products,
         ]);
     })->name('shop');
-    Route::get('/cart', fn () => Inertia::render('User/Cart/Index'))->name('cart');
+    Route::get('/cart', function () {
+        $delivery = Delivery::query()->latest()->first();
+
+        return Inertia::render('User/Cart/Index', [
+            'delivery' => [
+                'fee_amount_per' => (float) ($delivery?->fee_amount_per ?? 0),
+                'qty_kg' => (float) ($delivery?->qty_kg ?? 1),
+            ],
+        ]);
+    })->name('cart');
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::get('/wishlist', fn () => Inertia::render('User/Wishlist/Index'))->name('wishlist');
     Route::get('/account', function () {
@@ -197,13 +210,17 @@ Route::prefix('')->group(function () {
                         'payment_method',
                         'subtotal_amount',
                         'discount_amount',
+                        'delivery_fee',
+                        'discount_type',
+                        'discount_value',
                         'total_amount',
                         'order_status',
                         'payment_status',
                         'created_at',
                     ])
                         ->with([
-                            'address:id,name,phone,address,floor',
+                            'address:id,name,phone,address,floor,qty_kilo',
+                            'promotionSeasons:id,order_id,code,promotion_type,promotion_value',
                             'items' => function ($items) {
                                 $items->select(['id', 'order_id', 'product_id', 'qty', 'unit_price'])
                                     ->with(['product:id,name,image']);
@@ -226,6 +243,12 @@ Route::prefix('')->group(function () {
                     'payment_method' => $order?->payment_method ?? null,
                     'subtotal' => (float) ($order?->subtotal_amount ?? 0),
                     'discount' => (float) ($order?->discount_amount ?? 0),
+                    'delivery_fee' => (float) ($order?->delivery_fee ?? 0),
+                    'discount_type' => $order?->discount_type ?? null,
+                    'discount_value' => (float) ($order?->discount_value ?? 0),
+                    'promotion_code' => $order?->promotionSeasons?->first()?->code ?? null,
+                    'promotion_type' => $order?->promotionSeasons?->first()?->promotion_type ?? null,
+                    'promotion_value' => (float) ($order?->promotionSeasons?->first()?->promotion_value ?? 0),
                     'address' => $order?->address ? [
                         'name' => $order->address->name,
                         'phone' => $order->address->phone,
@@ -398,6 +421,16 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::post('/promotions', [PromotionController::class, 'store'])->name('admin.promotions.store');
     Route::put('/promotions/{promotion}', [PromotionController::class, 'update'])->name('admin.promotions.update');
     Route::delete('/promotions/{promotion}', [PromotionController::class, 'destroy'])->name('admin.promotions.destroy');
+
+    Route::get('/promotion-seasons', [PromotionSeasonController::class, 'index'])->name('admin.promotion-seasons.index');
+    Route::post('/promotion-seasons', [PromotionSeasonController::class, 'store'])->name('admin.promotion-seasons.store');
+    Route::put('/promotion-seasons/{promotionSeason}', [PromotionSeasonController::class, 'update'])->name('admin.promotion-seasons.update');
+    Route::delete('/promotion-seasons/{promotionSeason}', [PromotionSeasonController::class, 'destroy'])->name('admin.promotion-seasons.destroy');
+
+    Route::get('/deliveries', [DeliveryController::class, 'index'])->name('admin.deliveries.index');
+    Route::post('/deliveries', [DeliveryController::class, 'store'])->name('admin.deliveries.store');
+    Route::put('/deliveries/{delivery}', [DeliveryController::class, 'update'])->name('admin.deliveries.update');
+    Route::delete('/deliveries/{delivery}', [DeliveryController::class, 'destroy'])->name('admin.deliveries.destroy');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('admin.orders.index');
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');

@@ -26,18 +26,66 @@
     </div>
 
     <nav class="flex-1 px-3 space-y-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
-      <div v-for="item in navItems" :key="item.path">
+      <div v-for="item in navItems" :key="item.path || item.title">
         
         <p v-if="!collapsed && item.isHeader" class="text-[11px] font-bold text-slate-500 px-3 mt-6 mb-2 uppercase tracking-wider">
           {{ item.title }}
         </p>
+
+        <div v-else-if="item.children" class="space-y-1">
+          <button
+            type="button"
+            :class="[
+              'w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group relative',
+              isGroupActive(item)
+                ? 'bg-green-500/10 text-green-400 font-bold'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+            ]"
+            @click="toggleGroup(item.title)"
+          >
+            <div
+              v-if="isGroupActive(item)"
+              class="absolute left-0 top-2 bottom-2 w-1 bg-green-500 rounded-r-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"
+            ></div>
+
+            <v-icon :color="isGroupActive(item) ? 'green-accent-3' : ''" :class="[collapsed ? 'mx-auto' : '', 'transition-colors']">
+              {{ item.icon }}
+            </v-icon>
+
+            <span v-if="!collapsed" class="text-sm tracking-wide flex-1 text-left">{{ item.title }}</span>
+
+            <v-icon v-if="!collapsed" size="18" class="text-slate-500">
+              {{ isGroupExpanded(item.title) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+            </v-icon>
+
+            <div v-if="collapsed" class="absolute left-16 bg-slate-800 text-white text-[11px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity border border-slate-700 whitespace-nowrap z-50">
+              {{ item.title }}
+            </div>
+          </button>
+
+          <div v-if="isGroupExpanded(item.title) && !collapsed" class="ml-4 space-y-1 border-l border-slate-800 pl-2">
+            <Link
+              v-for="child in item.children"
+              :key="child.path"
+              :href="child.path"
+              :class="[
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative',
+                isActive(child.path)
+                  ? 'bg-green-500/10 text-green-400 font-bold'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+              ]"
+            >
+              <v-icon :color="isActive(child.path) ? 'green-accent-3' : ''" size="18">{{ child.icon }}</v-icon>
+              <span class="text-sm tracking-wide">{{ child.title }}</span>
+            </Link>
+          </div>
+        </div>
 
         <Link
           v-else-if="!item.isHeader"
           :href="item.path"
           :class="[
             'flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group relative',
-            /* Check if the current route matches the item path */
             isActive(item.path)
               ? 'bg-green-500/10 text-green-400 font-bold' 
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
@@ -79,7 +127,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import defaultLogo from '@img/Logo.png';
 
@@ -137,7 +185,15 @@ const navItems = [
   // { title: "Locations", path: "/admin/locations", icon: "mdi-map-marker-radius-outline" },
   { title: "Users", path: "/admin/users", icon: "mdi-account-group-outline" },
   { title: "Products", path: "/admin/products", icon: "mdi-package-variant-closed" },
-  { title: "Promotions", path: "/admin/promotions", icon: "mdi-percent" },
+  {
+    title: "Promotions",
+    icon: "mdi-percent",
+    children: [
+      { title: "Promotion", path: "/admin/promotions", icon: "mdi-tag-outline" },
+      { title: "Promotion Season", path: "/admin/promotion-seasons", icon: "mdi-calendar-star" },
+      { title: "Delivery", path: "/admin/deliveries", icon: "mdi-truck-delivery-outline" },
+    ],
+  },
   { title: "Orders", path: "/admin/orders", icon: "mdi-tray-full" },
   { title: "Reviews", path: "/admin/reviews", icon: "mdi-star-outline" },
   { title: "Contacts", path: "/admin/contacts", icon: "mdi-email-outline" },
@@ -148,20 +204,50 @@ const navItems = [
 
 
 
-// Get current URL path
 const currentPath = computed(() => page.url);
 
-// Helper function to check active state
+const expandedGroups = ref({});
+
+function isPromotionPath(path) {
+  return path === '/admin/promotions'
+    || path.startsWith('/admin/promotion-seasons')
+    || path.startsWith('/admin/deliveries');
+}
+
+watch(
+  currentPath,
+  (path) => {
+    if (isPromotionPath(path)) {
+      expandedGroups.value.Promotions = true;
+    }
+  },
+  { immediate: true }
+);
+
+function toggleGroup(title) {
+  expandedGroups.value[title] = !expandedGroups.value[title];
+}
+
+function isGroupExpanded(title) {
+  return !!expandedGroups.value[title];
+}
+
+function isGroupActive(item) {
+  return item.children?.some((child) => isActive(child.path)) ?? false;
+}
+
 const isActive = (path) => {
-  // Special handling for Products menu item
-  // It should be active for /admin/products, /admin/brands, and /admin/categories
   if (path === '/admin/products') {
-    return currentPath.value === '/admin/products' || 
-           currentPath.value.startsWith('/admin/products') ||
-           currentPath.value.startsWith('/admin/brands') ||
-           currentPath.value.startsWith('/admin/categories');
+    return currentPath.value === '/admin/products'
+      || currentPath.value.startsWith('/admin/products')
+      || currentPath.value.startsWith('/admin/brands')
+      || currentPath.value.startsWith('/admin/categories');
   }
-  
-  return currentPath.value === path || currentPath.value.startsWith(path);
+
+  if (path === '/admin/promotions') {
+    return currentPath.value === '/admin/promotions';
+  }
+
+  return currentPath.value === path || currentPath.value.startsWith(`${path}/`);
 };
 </script>
