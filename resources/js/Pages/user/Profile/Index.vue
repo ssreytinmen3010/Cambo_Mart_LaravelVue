@@ -27,6 +27,11 @@ const checkoutPaymentStatus = computed(() => checkoutResult.value?.payment_statu
 const checkoutTitle = computed(() => 'Order placed');
 const checkoutDescription = computed(() => {
     if (!checkoutResult.value) return '';
+
+    if (checkoutResult.value.payment_method === 'online') {
+        return `Order ${checkoutResult.value.order_number} placed successfully. Payment confirmed and saved to your history`;
+    }
+
     return `Order ${checkoutResult.value.order_number} placed. Pay cash on delivery when your order arrives.`;
 });
 

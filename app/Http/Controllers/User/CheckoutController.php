@@ -56,7 +56,7 @@ class CheckoutController extends Controller
             'phone' => ['required', 'string', 'max:50'],
             'address' => ['required', 'string', 'max:5000'],
             'floor' => ['nullable', 'string', 'max:255'],
-            'payment_method' => ['required', 'in:'.Order::PAYMENT_METHOD_CASH],
+            'payment_method' => ['required', 'in:'.Order::PAYMENT_METHOD_CASH.','.Order::PAYMENT_METHOD_ONLINE],
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -87,7 +87,7 @@ class CheckoutController extends Controller
                 'total_amount' => $cart->total_amount,
                 'order_status' => Order::ORDER_PENDING,
                 'payment_status' => Order::PAYMENT_PAID,
-                'payment_method' => Order::PAYMENT_METHOD_CASH,
+                'payment_method' => $validated['payment_method'],
             ]);
 
             foreach ($cart->items as $item) {

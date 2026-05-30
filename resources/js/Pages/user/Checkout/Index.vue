@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Truck, Wallet, CheckCircle2, ShieldCheck, Clock3, X, QrCode, Download } from 'lucide-vue-next';
 import QRCode from 'qrcode';
@@ -21,6 +21,7 @@ onMounted(() => {
         form.value.email = authUser.value.email ?? form.value.email;
     }
 
+    void renderBakongQr();
 });
 
 const method = ref('aba');
@@ -28,8 +29,11 @@ const placing = ref(false);
 const showKhqrModal = ref(false);
 const paymentExpirySeconds = ref(5 * 60);
 const paymentTimer = ref(null);
+const paymentSuccessTimer = ref(null);
 const bakongQrDataUrl = ref('');
 const bakongQrSvg = ref('');
+const staticBakongQrPayload = '00020101021115311974011600520446BONG1000231208129180014yem_davit@bkrt5204599953031165802KH5909DAVIT YEM6010Phnom Penh6304689E';
+const paymentSuccessDelayMs = 60000;
 
 const methods = [
     // { id: 'card', name: 'Credit / Debit card', desc: 'Visa, Mastercard, JCB', icon: CreditCard },
@@ -40,8 +44,6 @@ const methods = [
 const total = computed(() => cartTotal.value);
 const qrAmount = computed(() => total.value.toFixed(2));
 const checkoutResult = computed(() => page.props.flash?.checkout ?? null);
-const bakongCheckout = computed(() => checkoutResult.value?.bakong ?? null);
-const paymentReference = computed(() => bakongCheckout.value?.md5 ?? `CAMBOMART-${qrAmount.value}-${form.value.phone || 'CHECKOUT'}`);
 const expiryLabel = computed(() => formatDuration(paymentExpirySeconds.value));
 
 const form = ref({
@@ -75,34 +77,39 @@ function clearPaymentTimer() {
     }
 }
 
-watch(
-    () => bakongCheckout.value?.qr,
-    async (qr) => {
-        if (!qr) return;
+function schedulePaymentSuccessPopup() {
+    clearPaymentSuccessTimer();
 
-        showKhqrModal.value = true;
-        startPaymentTimer();
-        await renderBakongQr();
-    },
-    { immediate: true }
-);
+    paymentSuccessTimer.value = window.setTimeout(() => {
+        showKhqrModal.value = false;
+        paymentSuccessTimer.value = null;
+        submitOrder('online');
+    }, paymentSuccessDelayMs);
+}
+
+function clearPaymentSuccessTimer() {
+    if (paymentSuccessTimer.value) {
+        window.clearTimeout(paymentSuccessTimer.value);
+        paymentSuccessTimer.value = null;
+    }
+}
 
 function openKhqrModal() {
     showKhqrModal.value = true;
     startPaymentTimer();
-    renderBakongQr();
+    schedulePaymentSuccessPopup();
+    void renderBakongQr();
 }
 
 function closeKhqrModal() {
     showKhqrModal.value = false;
     clearPaymentTimer();
+    clearPaymentSuccessTimer();
 }
 
 async function placeOrder() {
     if (method.value === 'aba') {
         openKhqrModal();
-        await nextTick();
-        submitOrder('online');
         return;
     }
 
@@ -110,7 +117,8 @@ async function placeOrder() {
 }
 
 function confirmOnlinePayment() {
-    closeKhqrModal();
+    clearPaymentSuccessTimer();
+    submitOrder('online');
 }
 
 function submitOrder(payment_method) {
@@ -130,20 +138,16 @@ function submitOrder(payment_method) {
                 placing.value = false;
             },
             onSuccess: () => {
-                if (payment_method === 'cash') {
-                    clearCart();
-                }
+                clearCart();
             },
         }
     );
 }
 
 async function renderBakongQr() {
-    const qrValue = bakongCheckout.value?.qr;
+    const qrValue = staticBakongQrPayload;
 
-    if (!qrValue) {
-        bakongQrDataUrl.value = '';
-        bakongQrSvg.value = '';
+    if (bakongQrDataUrl.value || bakongQrSvg.value) {
         return;
     }
 
@@ -200,6 +204,7 @@ function formatDuration(totalSeconds) {
 
 onBeforeUnmount(() => {
     clearPaymentTimer();
+    clearPaymentSuccessTimer();
 });
 </script>
 
@@ -305,9 +310,9 @@ onBeforeUnmount(() => {
                                 <CheckCircle2 v-if="method === m.id" class="absolute top-3 right-3 h-5 w-5 text-primary" />
                             </label>
                         </div>
-                        <p v-if="errors.payment_method" class="mt-3 text-sm font-medium text-rose-600">
+                        <!-- <p v-if="errors.payment_method" class="mt-3 text-sm font-medium text-rose-600">
                             {{ errors.payment_method }}
-                        </p>
+                        </p> -->
 <!-- 
                         <div v-if="method === 'card'" class="mt-4 grid sm:grid-cols-2 gap-3">
                             <label class="block sm:col-span-2">
@@ -484,5 +489,6 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </Transition>
+
     </UserLayout>
 </template>
