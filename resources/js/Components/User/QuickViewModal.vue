@@ -293,7 +293,7 @@ async function handleWishlist() {
                                 ]"
                                 @click="handleWishlist"
                             >
-                                <span aria-hidden="true">❤️</span>
+                                <v-icon size="22">{{ wished ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
                             </button>
                         </div>
 
@@ -301,7 +301,7 @@ async function handleWishlist() {
                             class="mt-6 pt-6 border-t border-border/60 text-xs text-muted-foreground space-y-1.5"
                         >
                             <p>🚚 Free delivery on orders over $25</p>
-                            <p>🔄 7-day return policy</p>
+                            <!-- <p>🔄 7-day return policy</p> -->
                             <p>🌿 100% naturally sourced</p>
                         </div>
                     </div>

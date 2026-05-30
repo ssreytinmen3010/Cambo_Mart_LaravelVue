@@ -50,7 +50,7 @@ class RegisteredUserController extends Controller
         if ($user->role->name === 'admin') {
             return redirect()->route('admin.dashboard');
         } elseif ($user->role->name === 'user') {
-            return redirect()->route('user.dashboard');
+            return redirect()->route('home');
         }
 
         return redirect(RouteServiceProvider::HOME);

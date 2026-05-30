@@ -10,12 +10,12 @@ const storeAddress = computed(() => page.props.appSettings?.address ?? 'Phnom Pe
 const storePhone = computed(() => page.props.appSettings?.phone ?? '+855 23 456 789');
 const storeEmail = computed(() => page.props.appSettings?.email ?? 'hello@cambomart.com');
 
-const socials = [
-    { icon: '📘' },
-    { icon: '📸' },
-    { icon: '🐦' },
-    { icon: '▶️' },
-];
+// const socials = [
+//     { icon: '📘' },
+//     { icon: '📸' },
+//     { icon: '🐦' },
+//     { icon: '▶️' },
+// ];
 
 const shopLinks = [
     { href: route('shop'), label: 'All products' },

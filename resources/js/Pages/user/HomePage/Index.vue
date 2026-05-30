@@ -14,6 +14,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    brands: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const currentIndex = ref(0);
@@ -55,6 +59,14 @@ const features = ref([
     { icon: "🛡️", title: "Secure Payment", desc: "Trusted checkout" },
     { icon: "🎧", title: "24/7 Support", desc: "Always here for you" },
 ]);
+
+const brands = computed(() =>
+    (props.brands || []).slice(0, 8).map((brand) => ({
+        id: Number(brand.id),
+        name: brand.name,
+        image: brand.image,
+    })),
+);
 
 const featuredProducts = computed(() =>
     (props.products || []).map((product) => ({
@@ -303,6 +315,53 @@ onUnmounted(() => {
                         :key="product.id"
                         :product="product"
                     />
+                </div>
+            </section>
+            <section v-if="brands.length" class="container mx-auto px-4 mt-16">
+                <div class="mb-3 flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary">
+                            Brand
+                        </p>
+                        <h2 class="mt-0.5 text-lg font-bold md:text-xl">
+                            Shop by Brand
+                        </h2>
+                    </div>
+
+                    <a
+                        :href="route('brand')"
+                        class="shrink-0 text-xs font-semibold text-primary hover:underline sm:text-sm"
+                    >
+                        View all →
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                    <a
+                        v-for="brand in brands"
+                        :key="brand.id"
+                        :href="route('brand')"
+                        class="group flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-border/60 bg-card p-2 transition-all hover:border-primary/40 hover:shadow-soft"
+                    >
+                        <img
+                            v-if="brand.image"
+                            :src="brand.image"
+                            :alt="brand.name"
+                            class="h-7 w-7 object-contain sm:h-8 sm:w-8"
+                            loading="lazy"
+                        />
+                        <span
+                            v-else
+                            class="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary sm:h-8 sm:w-8 sm:text-xs"
+                        >
+                            {{ brand.name?.charAt(0) }}
+                        </span>
+                        <p
+                            class="line-clamp-1 w-full text-center text-[9px] font-medium text-muted-foreground group-hover:text-foreground sm:text-[10px]"
+                        >
+                            {{ brand.name }}
+                        </p>
+                    </a>
                 </div>
             </section>
 

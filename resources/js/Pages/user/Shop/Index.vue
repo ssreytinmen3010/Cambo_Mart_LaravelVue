@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
-import { Filter, Star, X } from 'lucide-vue-next';
+import { Filter, X, ChevronDown } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 import ProductCard from '@/Components/User/ProductCard.vue';
+import ShopFiltersPanel from '@/Components/User/ShopFiltersPanel.vue';
 import { useStore } from '@/composables/useStore';
 
 const props = defineProps({
@@ -31,17 +32,15 @@ const maxPrice = ref(60);
 const sort = ref('newest');
 const filtersOpen = ref(false);
 
+const sortOptions = [
+    { value: 'newest', label: 'Newest' },
+    { value: 'low', label: 'Price: low to high' },
+    { value: 'high', label: 'Price: high to low' },
+    { value: 'name', label: 'Name: A–Z' },
+];
+
 const page = usePage();
 const { loadMyRatings } = useStore();
-
-function toggleInArray(list, id) {
-    const index = list.indexOf(id);
-    if (index > -1) {
-        list.splice(index, 1);
-    } else {
-        list.push(id);
-    }
-}
 
 function resetFilters() {
     activeCats.value = [];
@@ -111,6 +110,11 @@ const filteredProducts = computed(() => {
     return list;
 });
 
+watch(filtersOpen, (open) => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = open ? 'hidden' : '';
+});
+
 onMounted(() => {
     if (!page.props.auth?.user) return;
     const ids = (props.products || []).map((p) => Number(p.id)).filter(Boolean);
@@ -137,149 +141,51 @@ onMounted(() => {
                         <button type="button" class="text-xs text-primary hover:underline" @click="resetFilters">Reset all</button>
                     </div>
 
-                    <div class="bg-card rounded-2xl p-4 border border-border/60">
-                        <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Category</p>
-                        <div class="space-y-2">
-                            <label v-for="c in categories" :key="c.id" class="flex items-center gap-2 cursor-pointer text-xs">
-                                <input
-                                    type="checkbox"
-                                    :checked="activeCats.includes(c.id)"
-                                    class="sr-only"
-                                    @change="toggleInArray(activeCats, c.id)"
-                                />
-                                <span
-                                    class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
-                                    :class="activeCats.includes(c.id) ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
-                                >
-                                    <svg v-if="activeCats.includes(c.id)" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                                        <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </span>
-                                <span class="font-medium leading-none">{{ c.name }}</span>
-                                <span class="ml-auto text-[10px] text-muted-foreground">{{ c.count }}</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="bg-card rounded-2xl p-4 border border-border/60">
-                        <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Brand</p>
-                        <div class="space-y-2">
-                            <label v-for="b in brands" :key="b.id" class="flex items-center gap-2 cursor-pointer text-xs">
-                                <input
-                                    type="checkbox"
-                                    :checked="activeBrands.includes(b.id)"
-                                    class="sr-only"
-                                    @change="toggleInArray(activeBrands, b.id)"
-                                />
-                                <span
-                                    class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
-                                    :class="activeBrands.includes(b.id) ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
-                                >
-                                    <svg v-if="activeBrands.includes(b.id)" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                                        <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </span>
-                                <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
-                                    <img
-                                        v-if="b.image"
-                                        :src="b.image"
-                                        :alt="b.name"
-                                        class="h-full w-full object-cover"
-                                    />
-                                    <span v-else class="text-[9px] font-bold text-muted-foreground">
-                                        {{ b.name.charAt(0) }}
-                                    </span>
-                                </span>
-                                <span class="font-medium leading-none">{{ b.name }}</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="bg-card rounded-2xl p-4 border border-border/60 space-y-2">
-                        <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Promotions</p>
-                        <label class="flex items-center gap-2 text-xs cursor-pointer">
-                            <input v-model="onSaleOnly" type="checkbox" class="sr-only" />
-                            <span
-                                class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
-                                :class="onSaleOnly ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
-                            >
-                                <svg v-if="onSaleOnly" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                                    <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                            </span>
-                            <span class="font-medium leading-none">On sale</span>
-                        </label>
-                        <label class="flex items-center gap-2 text-xs cursor-pointer">
-                            <input v-model="inStockOnly" type="checkbox" class="sr-only" />
-                            <span
-                                class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
-                                :class="inStockOnly ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
-                            >
-                                <svg v-if="inStockOnly" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                                    <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                            </span>
-                            <span class="font-medium leading-none">In stock only</span>
-                        </label>
-                    </div>
-
-                    <div class="bg-card rounded-2xl p-4 border border-border/60">
-                        <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Price range</p>
-                        <input v-model.number="maxPrice" type="range" min="3" max="60" class="w-full accent-primary" />
-                        <div class="flex justify-between text-xs text-muted-foreground mt-1">
-                            <span>$3</span>
-                            <span class="font-semibold text-foreground">Up to ${{ maxPrice }}</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-card rounded-2xl p-4 border border-border/60">
-                        <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Customer rating</p>
-                        <div class="space-y-2">
-                            <button
-                                v-for="r in [4, 3, 2, 0]"
-                                :key="r"
-                                type="button"
-                                class="w-full flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg"
-                                :class="minRating === r ? 'bg-primary/10 text-primary' : 'hover:bg-secondary'"
-                                @click="minRating = r"
-                            >
-                                <div class="flex">
-                                    <Star
-                                        v-for="i in 5"
-                                        :key="i"
-                                        class="h-3.5 w-3.5"
-                                        :class="i <= r ? 'fill-warning text-warning' : 'text-muted'"
-                                    />
-                                </div>
-                                {{ r === 0 ? 'All ratings' : '& up' }}
-                            </button>
-                        </div>
-                    </div>
+                    <ShopFiltersPanel
+                        v-model:active-cats="activeCats"
+                        v-model:active-brands="activeBrands"
+                        v-model:in-stock-only="inStockOnly"
+                        v-model:on-sale-only="onSaleOnly"
+                        v-model:min-rating="minRating"
+                        v-model:max-price="maxPrice"
+                        :categories="categories"
+                        :brands="brands"
+                    />
                 </aside>
 
                 <div>
-                    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-                        <button
-                            type="button"
-                            class="lg:hidden inline-flex items-center gap-2 px-4 h-10 rounded-full border text-sm font-medium"
-                            @click="filtersOpen = true"
-                        >
-                            <Filter class="h-4 w-4" /> Filters
-                        </button>
+                    <div class="mb-5 space-y-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                class="lg:hidden inline-flex items-center gap-2 rounded-full border px-4 h-11 text-sm font-medium"
+                                @click="filtersOpen = true"
+                            >
+                                <Filter class="h-4 w-4" /> Filters
+                            </button>
 
-                        <p class="text-sm text-muted-foreground">
-                            <span class="font-semibold text-foreground">{{ filteredProducts.length }}</span> products
-                        </p>
+                            <p class="text-sm text-muted-foreground">
+                                <span class="font-semibold text-foreground">{{ filteredProducts.length }}</span> products
+                            </p>
+                        </div>
 
-                        <select
-                            v-model="sort"
-                            class="h-10 rounded-full border px-4 text-sm bg-background outline-none focus:border-primary cursor-pointer"
-                        >
-                            <option value="newest">Newest</option>
-                            <option value="low">Price: low to high</option>
-                            <option value="high">Price: high to low</option>
-                            <option value="name">Name: A–Z</option>
-                        </select>
+                        <label class="block w-full sm:max-w-xs sm:ml-auto">
+                            <span class="mb-1.5 block text-xs font-medium text-muted-foreground">Sort by</span>
+                            <div class="relative">
+                                <select
+                                    v-model="sort"
+                                    class="shop-sort-select h-11 w-full appearance-none rounded-full border border-border bg-background pl-4 pr-10 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 cursor-pointer"
+                                >
+                                    <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                                <ChevronDown
+                                    class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                                    aria-hidden="true"
+                                />
+                            </div>
+                        </label>
                     </div>
 
                     <div v-if="filteredProducts.length === 0" class="rounded-3xl border border-dashed py-20 text-center">
@@ -295,22 +201,121 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-
-            <div v-if="filtersOpen" class="fixed inset-0 z-50 lg:hidden">
-                <div class="absolute inset-0 bg-foreground/50" @click="filtersOpen = false" />
-                <div class="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-background p-6 overflow-y-auto">
-                    <button
-                        type="button"
-                        class="absolute top-3 right-3 h-9 w-9 grid place-items-center rounded-full hover:bg-secondary"
-                        @click="filtersOpen = false"
-                    >
-                        <X class="h-4 w-4" />
-                    </button>
-                    <p class="font-semibold mb-4">Filters</p>
-                    <button type="button" class="text-xs text-primary mb-4" @click="resetFilters">Reset all</button>
-                    <p class="text-sm text-muted-foreground">Use desktop view for full filter panel, or adjust sort above.</p>
-                </div>
-            </div>
         </div>
+
+        <Teleport to="body">
+            <Transition name="drawer-fade">
+                <div v-if="filtersOpen" class="fixed inset-0 z-[200] lg:hidden">
+                    <div
+                        class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+                        aria-hidden="true"
+                        @click="filtersOpen = false"
+                    />
+
+                    <Transition name="drawer-slide" appear>
+                        <aside
+                            v-if="filtersOpen"
+                            class="absolute left-0 top-0 z-10 flex h-full w-[min(20rem,88vw)] flex-col bg-background shadow-2xl"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Filters"
+                        >
+                            <div class="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-4">
+                                <h3 class="font-semibold flex items-center gap-2">
+                                    <Filter class="h-4 w-4" /> Filters
+                                </h3>
+                                <button
+                                    type="button"
+                                    class="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary"
+                                    aria-label="Close filters"
+                                    @click="filtersOpen = false"
+                                >
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            <div class="shrink-0 border-b border-border/60 px-4 py-3 space-y-3">
+                                <label class="block w-full">
+                                    <span class="mb-1.5 block text-xs font-medium text-muted-foreground">Sort by</span>
+                                    <div class="relative">
+                                        <select
+                                            v-model="sort"
+                                            class="shop-sort-select h-11 w-full appearance-none rounded-xl border border-border bg-background pl-4 pr-10 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                        >
+                                            <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                                                {{ option.label }}
+                                            </option>
+                                        </select>
+                                        <ChevronDown
+                                            class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                </label>
+
+                                <div class="flex items-center justify-between gap-2">
+                                    <button type="button" class="text-xs text-primary font-medium" @click="resetFilters">
+                                        Reset all
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
+                                        @click="filtersOpen = false"
+                                    >
+                                        Show {{ filteredProducts.length }} products
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto px-4 py-4">
+                                <ShopFiltersPanel
+                                    v-model:active-cats="activeCats"
+                                    v-model:active-brands="activeBrands"
+                                    v-model:in-stock-only="inStockOnly"
+                                    v-model:on-sale-only="onSaleOnly"
+                                    v-model:min-rating="minRating"
+                                    v-model:max-price="maxPrice"
+                                    :categories="categories"
+                                    :brands="brands"
+                                />
+                            </div>
+                        </aside>
+                    </Transition>
+                </div>
+            </Transition>
+        </Teleport>
     </UserLayout>
 </template>
+
+<style scoped>
+.drawer-fade-enter-active,
+.drawer-fade-leave-active {
+    transition: opacity 0.25s ease;
+}
+
+.drawer-fade-enter-from,
+.drawer-fade-leave-to {
+    opacity: 0;
+}
+
+.drawer-slide-enter-active,
+.drawer-slide-leave-active {
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.drawer-slide-enter-from,
+.drawer-slide-leave-to {
+    transform: translateX(-100%);
+}
+
+.shop-sort-select {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+    .shop-sort-select {
+        font-size: 16px;
+    }
+}
+</style>

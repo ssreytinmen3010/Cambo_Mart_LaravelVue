@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useActivePath } from '@/composables/useActivePath';
 import { useStore } from '@/composables/useStore';
@@ -7,6 +7,7 @@ import defaultLogo from '@img/Logo.png';
 
 const mobileOpen = ref(false);
 const dropdownOpen = ref(false);
+const accountMenuRef = ref(null);
 const { cartCount, wishlist, ensureCartLoaded, ensureWishlistLoaded, setCurrentUser } = useStore();
 
 const page = usePage();
@@ -18,6 +19,7 @@ onMounted(() => {
         ensureCartLoaded();
         ensureWishlistLoaded();
     }
+    document.addEventListener('click', onDocumentClick);
 });
 
 watch(
@@ -90,9 +92,56 @@ const navLinks = [
     { href: route('contact'), label: 'Contact', match: '/contact' },
 ];
 
-function toggleDropdown() {
+const authUser = computed(() => page.props.auth?.user ?? null);
+
+const userInitials = computed(() => {
+    const name = String(authUser.value?.name ?? '').trim();
+    if (!name) return '?';
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+});
+
+const avatarLoadFailed = ref(false);
+
+watch(
+    () => authUser.value?.image,
+    () => {
+        avatarLoadFailed.value = false;
+    },
+);
+
+const userAvatarUrl = computed(() => {
+    const image = authUser.value?.image;
+    if (!image || image === 'null') return null;
+    return normalizeLogoUrl(String(image));
+});
+
+const showUserAvatar = computed(() => Boolean(userAvatarUrl.value) && !avatarLoadFailed.value);
+
+function onAvatarError() {
+    avatarLoadFailed.value = true;
+}
+
+function toggleDropdown(event) {
+    event?.stopPropagation();
     dropdownOpen.value = !dropdownOpen.value;
 }
+
+function closeDropdown() {
+    dropdownOpen.value = false;
+}
+
+function onDocumentClick(event) {
+    if (!dropdownOpen.value || !accountMenuRef.value) return;
+    if (!accountMenuRef.value.contains(event.target)) {
+        dropdownOpen.value = false;
+    }
+}
+
+onUnmounted(() => {
+    document.removeEventListener('click', onDocumentClick);
+});
 
 function linkActive(match) {
     return isActive(match);
@@ -154,9 +203,10 @@ function linkActive(match) {
                 <div class="flex items-center gap-1 ml-auto">
                     <Link
                         :href="route('wishlist')"
-                        class="relative h-10 w-10 grid place-items-center rounded-full hover:bg-secondary transition-colors"
+                        class="relative h-10 w-10 grid place-items-center rounded-full hover:bg-secondary transition-colors text-foreground"
+                        aria-label="Wishlist"
                     >
-                        ❤️
+                        <v-icon size="22">mdi-heart-outline</v-icon>
                         <span
                             v-if="wishlist.length"
                             class="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 grid place-items-center text-[10px] font-bold rounded-full bg-primary text-primary-foreground"
@@ -167,9 +217,10 @@ function linkActive(match) {
 
                     <Link
                         :href="route('cart')"
-                        class="relative h-10 w-10 grid place-items-center rounded-full hover:bg-secondary transition-colors"
+                        class="relative h-10 w-10 grid place-items-center rounded-full hover:bg-secondary transition-colors text-foreground"
+                        aria-label="Cart"
                     >
-                        🛒
+                        <v-icon size="22">mdi-cart-outline</v-icon>
                         <span
                             v-if="cartCount"
                             class="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 grid place-items-center text-[10px] font-bold rounded-full bg-primary text-primary-foreground animate-scale-in"
@@ -178,43 +229,144 @@ function linkActive(match) {
                         </span>
                     </Link>
 
-                    <div class="relative hidden sm:block">
+                    <div ref="accountMenuRef" class="relative hidden sm:block">
                         <button
                             type="button"
-                            class="flex items-center gap-2 h-10 px-3 rounded-full hover:bg-secondary transition-colors text-sm font-medium"
+                            class="flex items-center gap-2 h-10 pl-1.5 pr-2.5 rounded-full border transition-all text-sm font-medium"
+                            :class="dropdownOpen
+                                ? 'bg-secondary border-primary/30 ring-2 ring-primary/10'
+                                : 'border-transparent hover:bg-secondary hover:border-border/60'"
+                            aria-haspopup="menu"
+                            :aria-expanded="dropdownOpen"
                             @click="toggleDropdown"
                         >
-                            <div class="h-7 w-7 rounded-full bg-gradient-brand grid place-items-center text-primary-foreground">👤</div>
-                            ▼
+                            <div
+                                class="h-7 w-7 rounded-full shrink-0 overflow-hidden grid place-items-center border border-border/60"
+                                :class="showUserAvatar
+                                    ? 'bg-background'
+                                    : authUser
+                                        ? 'bg-gradient-brand text-primary-foreground text-[11px] font-bold'
+                                        : 'bg-secondary text-muted-foreground'"
+                            >
+                                <img
+                                    v-if="showUserAvatar"
+                                    :src="userAvatarUrl"
+                                    :alt="authUser?.name ?? 'Profile'"
+                                    class="h-full w-full object-cover"
+                                    @error="onAvatarError"
+                                />
+                                <span v-else-if="authUser">{{ userInitials }}</span>
+                                <v-icon v-else size="18">mdi-account-outline</v-icon>
+                            </div>
+                            <span v-if="authUser" class="hidden md:inline max-w-[88px] truncate text-foreground/90">
+                                {{ authUser.name?.split(' ')[0] }}
+                            </span>
+                            <v-icon size="16" class="text-muted-foreground shrink-0">
+                                {{ dropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+                            </v-icon>
                         </button>
 
-                        <div
-                            v-if="dropdownOpen"
-                            class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-xl border z-50"
+                        <Transition
+                            enter-active-class="transition duration-200 ease-out"
+                            enter-from-class="opacity-0 translate-y-1 scale-95"
+                            enter-to-class="opacity-100 translate-y-0 scale-100"
+                            leave-active-class="transition duration-150 ease-in"
+                            leave-from-class="opacity-100 translate-y-0 scale-100"
+                            leave-to-class="opacity-0 translate-y-1 scale-95"
                         >
-                            <div class="px-4 py-3 font-semibold border-b">
-                                {{ page.props.auth?.user ? `Hi, ${page.props.auth.user.name}` : 'Welcome to CamboMart' }}
-                            </div>
+                           <div
+    v-if="dropdownOpen"
+    class="account-menu absolute right-0 mt-2 w-56 overflow-hidden rounded-lg border border-border/80 bg-background/95 backdrop-blur-md z-50 shadow-lg"
+    role="menu"
+    @click.stop
+>
+    <div class="p-1.5 space-y-0.5">
+        <template v-if="!authUser">
+            <!-- Minimal Label -->
+            <p class="px-2.5 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/90 font-semibold">
+                Account
+            </p>
+            
+            <Link
+                :href="route('login')"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                @click="closeDropdown"
+            >
+                <v-icon size="16" class="text-primary">mdi-login</v-icon>
+                <span class="text-xs font-medium">Sign in</span>
+            </Link>
+            
+            <Link
+                :href="route('register')"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                @click="closeDropdown"
+            >
+                <v-icon size="16" class="text-foreground/70">mdi-account-plus-outline</v-icon>
+                <span class="text-xs font-medium">Register</span>
+            </Link>
+            
+            <div class="pt-1 px-1">
+                <Link :href="route('register')" @click="closeDropdown">
+                    <span class="flex w-full items-center justify-center gap-1 rounded bg-primary px-2 py-1.5 text-[11px] font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
+                        Join Free
+                        <v-icon size="14">mdi-arrow-right</v-icon>
+                    </span>
+                </Link>
+            </div>
+        </template>
 
-                            <template v-if="!page.props.auth?.user">
-                                <Link :href="route('login')" class="dropdown-item">Login</Link>
-                                <Link :href="route('register')" class="dropdown-item">Register</Link>
-                            </template>
+        <template v-else>
+            <!-- Minimal User Info -->
+            <div class="px-2.5 py-2 mb-1 bg-secondary/30 rounded-md">
+                <p class="text-xs font-bold truncate">Hi, {{ authUser.name.split(' ')[0] }}</p>
+                <p class="text-[10px] text-muted-foreground truncate">{{ authUser.email }}</p>
+            </div>
+            
+            <Link
+                :href="route('user.profile')"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                @click="closeDropdown"
+            >
+                <v-icon size="16" class="text-foreground/70">mdi-account-circle-outline</v-icon>
+                <span class="text-xs font-medium">Profile</span>
+            </Link>
+            
+            <Link
+                :href="route('wishlist')"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                @click="closeDropdown"
+            >
+                <v-icon size="16" class="text-rose-500">mdi-heart-outline</v-icon>
+                <span class="text-xs font-medium flex-1">Wishlist</span>
+                <span v-if="wishlist.length" class="text-[10px] font-bold opacity-60">{{ wishlist.length }}</span>
+            </Link>
+            
+            <Link
+                :href="route('cart')"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                @click="closeDropdown"
+            >
+                <v-icon size="16" class="text-amber-600">mdi-cart-outline</v-icon>
+                <span class="text-xs font-medium flex-1">Cart</span>
+                <span v-if="cartCount" class="text-[10px] font-bold opacity-60">{{ cartCount }}</span>
+            </Link>
 
-                            <template v-else>
-                                <Link :href="route('user.dashboard')" class="dropdown-item">My Dashboard</Link>
-                                <Link :href="route('user.profile')" class="dropdown-item">My Profile</Link>
-                                <Link :href="route('wishlist')" class="dropdown-item">Wishlist</Link>
-                                <Link
-                                    :href="route('logout')"
-                                    method="post"
-                                    as="button"
-                                    class="dropdown-item w-full text-left"
-                                >
-                                    Sign Out
-                                </Link>
-                            </template>
-                        </div>
+            <div class="my-1 border-t border-border/40" />
+
+            <Link
+                :href="route('logout')"
+                method="post"
+                as="button"
+                class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 hover:bg-destructive/10 text-destructive transition-colors"
+                @click="closeDropdown"
+            >
+                <v-icon size="16">mdi-logout</v-icon>
+                <span class="text-xs font-medium">Sign out</span>
+            </Link>
+        </template>
+    </div>
+</div>
+                        </Transition>
                     </div>
 
                     <div v-if="!page.props.auth?.user" class="hidden lg:flex items-center gap-2 ml-2">
@@ -231,7 +383,7 @@ function linkActive(match) {
                         class="lg:hidden h-10 w-10 grid place-items-center rounded-full hover:bg-secondary"
                         @click="mobileOpen = !mobileOpen"
                     >
-                        {{ mobileOpen ? '✖' : '☰' }}
+                        <v-icon size="22">{{ mobileOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>
                     </button>
                 </div>
             </div>
@@ -292,13 +444,36 @@ function linkActive(match) {
 </template>
 
 <style scoped>
-.dropdown-item {
-    display: block;
-    padding: 12px 16px;
-    transition: 0.2s;
+.account-menu {
+    box-shadow: var(--shadow-card), var(--shadow-hover);
 }
 
-.dropdown-item:hover {
-    background: #f5f5f5;
+.account-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.625rem 0.5rem;
+    border-radius: 0.75rem;
+    text-align: left;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.account-menu-item:hover {
+    background: hsl(var(--secondary));
+}
+
+.account-menu-item--danger:hover {
+    background: hsl(var(--destructive) / 0.08);
+    color: hsl(var(--destructive));
+}
+
+.account-menu-icon {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    flex-shrink: 0;
 }
 </style>

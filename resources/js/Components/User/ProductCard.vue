@@ -136,9 +136,7 @@ async function handleWishlist() {
                         ]"
                         @click.stop="handleWishlist"
                     >
-                        <span class="text-base leading-none" aria-hidden="true"
-                            >❤️</span
-                        >
+                        <v-icon size="18">{{ wished ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
                     </button>
 
                     <button
@@ -147,9 +145,7 @@ async function handleWishlist() {
                         class="product-card-action h-9 w-9 grid place-items-center rounded-full border border-border/60 bg-white/95 text-foreground shadow-md backdrop-blur-sm transition-all duration-300 opacity-100 group-hover:scale-110 hover:bg-primary hover:text-primary-foreground hover:border-primary"
                         @click.stop="openDetail"
                     >
-                        <span class="text-base leading-none" aria-hidden="true"
-                            >👁️</span
-                        >
+                        <v-icon size="18">mdi-eye-outline</v-icon>
                     </button>
                 </div>
 
