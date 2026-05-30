@@ -19,7 +19,7 @@ const previewImage = ref(null);
 const form = useForm({
   id: null,
   name: "",
-  brand_id: "",
+  brand_ids: [],
   description: "",
   image: "",
   status: true
@@ -41,6 +41,7 @@ function openAddModal() {
   isEdit.value = false;
   form.reset();
   form.status = true;
+  form.brand_ids = [];
   previewImage.value = null;
   showModal.value = true;
 }
@@ -49,9 +50,7 @@ function openEditModal(cat) {
   isEdit.value = true;
   form.id = cat.id;
   form.name = cat.name;
-  // You need the brand_id, but the table might only have brand_name. 
-  // Ensure your Controller 'through' method returns brand_id too!
-  form.brand_id = cat.brand_id || ""; 
+  form.brand_ids = Array.isArray(cat.brand_ids) ? cat.brand_ids.map((id) => Number(id)) : (cat.brand_id ? [Number(cat.brand_id)] : []);
   form.description = cat.description;
   form.image = cat.image;
   form.status = cat.is_active;
@@ -116,6 +115,7 @@ function deleteItem(id) {
           <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             <th class="px-6 py-3">Category</th>
             <th class="px-6 py-3">Parent Brand</th>
+            <th class="px-6 py-3">Total Product</th>
             <th class="px-6 py-3">Created</th>
             <th class="px-6 py-3">Updated</th>
             <th class="px-6 py-3 text-center">Status</th>
@@ -134,6 +134,7 @@ function deleteItem(id) {
               </div>
             </td>
             <td class="px-6 py-4 text-sm font-medium text-slate-600">{{ cat.brand }}</td>
+            <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ cat.products_count ?? 0 }}</td>
             <td class="px-6 py-4 text-[11px] text-slate-500 font-medium">{{ cat.created_at }}</td>
             <td class="px-6 py-4 text-[11px] text-slate-500 font-medium">{{ cat.updated_at }}</td>
             <td class="px-6 py-4 text-center">
@@ -182,12 +183,15 @@ function deleteItem(id) {
                 <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Name</label>
                 <input v-model="form.name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none"/>
               </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Brand</label>
-                <select v-model="form.brand_id" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none">
-                   <option value="" disabled>Select Brand</option>
-                   <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
-                </select>
+              <div class="space-y-2 md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Brands</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <label v-for="b in brands" :key="b.id" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition hover:border-emerald-300">
+                    <input v-model="form.brand_ids" type="checkbox" :value="b.id" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <span class="font-medium">{{ b.name }}</span>
+                  </label>
+                </div>
+                <p class="text-[11px] text-slate-500 ml-1">Select one or more brands for this category.</p>
               </div>
             </div>
 

@@ -44,7 +44,7 @@ const categories = computed(() =>
     (props.categories || []).map((category) => ({
         ...category,
         // UI expects `count` + `icon`
-        count: Number(category.qty_item ?? 0),
+        qty_item: Number(category.qty_item ?? 0),
         icon: "🛍️",
     })),
 );
@@ -218,28 +218,35 @@ onUnmounted(() => {
             </section>
 
             <section class="container mx-auto px-4 mt-16">
-                <div class="flex items-end justify-between mb-6">
+                <div class="mb-4 flex items-center justify-between gap-4">
                     <div>
                         <p
-                            class="text-xs font-semibold uppercase tracking-wider text-primary"
+                            class="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary"
                         >
                             Featured Categories
                         </p>
-                        <h2 class="text-2xl md:text-3xl font-bold mt-1">
+                        <h2 class="mt-1 text-xl md:text-2xl font-bold">
                             Shop by Category
                         </h2>
                     </div>
+
+                    <a
+                        :href="route('categories')"
+                        class="shrink-0 text-sm font-semibold text-primary hover:underline"
+                    >
+                        View all →
+                    </a>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="flex gap-3 overflow-x-auto pb-2 pr-1">
                     <a
                         v-for="category in categories"
                         :key="category.id"
                         :href="route('categories')"
-                        class="group block"
+                        class="group block shrink-0 w-[160px] sm:w-[180px]"
                     >
                         <div
-                            class="aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-primary-soft to-secondary relative border border-border/60"
+                            class="relative h-[132px] overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary-soft to-secondary"
                         >
                             <img
                                 v-if="category.image"
@@ -255,11 +262,11 @@ onUnmounted(() => {
 
                             <div class="absolute bottom-0 inset-x-0 p-3">
                                 <!-- <div class="text-2xl mb-1">{{ category.icon }}</div> -->
-                                <p class="text-sm font-semibold">
+                                <p class="text-sm font-semibold leading-tight">
                                     {{ category.name }}
                                 </p>
                                 <p class="text-[10px] text-muted-foreground">
-                                    {{ category.count }} items
+                                    {{ category.qty_item }} Total Product
                                 </p>
                             </div>
                         </div>

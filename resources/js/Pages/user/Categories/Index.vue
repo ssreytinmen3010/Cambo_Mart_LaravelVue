@@ -19,7 +19,6 @@ const categories = computed(() =>
         ...category,
         id: Number(category.id),
         count: Number(category.qty_item ?? 0),
-        icon: '🛍️',
     })),
 );
 
@@ -27,7 +26,6 @@ const brands = computed(() =>
     (props.brands || []).map((brand) => ({
         ...brand,
         id: Number(brand.id),
-        logo: '🏷️',
     })),
 );
 
@@ -77,12 +75,12 @@ onMounted(() => {
 
 <template>
     <Head>
-        <title>Categories — CamboMart</title>
+        <title>Categories - CamboMart</title>
         <meta
             name="description"
             content="Browse all CamboMart product categories from fresh fruit and vegetables to bakery, dairy, and household."
         />
-        <meta property="og:title" content="Categories — CamboMart" />
+        <meta property="og:title" content="Categories - CamboMart" />
         <meta property="og:description" content="Browse all CamboMart product categories." />
     </Head>
 
@@ -92,17 +90,17 @@ onMounted(() => {
                 <Link href="/" class="hover:text-primary">Home</Link> / Categories
             </p>
 
-            <h1 class="mt-2 text-3xl md:text-4xl font-bold">Shop by category</h1>
+            <h1 class="mt-2 text-3xl font-bold md:text-4xl">Shop by category</h1>
             <p class="mt-1 text-muted-foreground">
                 Find exactly what you need across {{ categories.length }} curated collections.
             </p>
 
-            <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
                 <button
                     v-for="c in categories"
                     :key="c.id"
                     type="button"
-                    class="group block text-left rounded-3xl overflow-hidden border transition-all"
+                    class="group block overflow-hidden rounded-3xl border text-left transition-all"
                     :class="
                         activeCategoryId === c.id
                             ? 'border-primary shadow-hover ring-2 ring-primary/20'
@@ -110,16 +108,15 @@ onMounted(() => {
                     "
                     @click="activeCategoryId = c.id"
                 >
-                    <div class="aspect-square relative bg-gradient-to-br from-primary-soft to-secondary">
+                    <div class="relative aspect-square bg-gradient-to-br from-primary-soft to-secondary">
                         <img
                             v-if="c.image"
                             :src="c.image"
                             :alt="c.name"
-                            class="absolute inset-0 h-full w-full object-cover opacity-70 group-hover:scale-110 transition-transform duration-500"
+                            class="absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div class="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
-                        <div class="absolute bottom-0 inset-x-0 p-3">
-                            <div class="text-2xl mb-1">{{ c.icon }}</div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent"></div>
+                        <div class="absolute inset-x-0 bottom-0 p-3">
                             <p class="text-sm font-semibold">{{ c.name }}</p>
                             <p class="text-[10px] text-muted-foreground">{{ c.count }} items</p>
                         </div>
@@ -127,13 +124,13 @@ onMounted(() => {
                 </button>
             </div>
 
-            <div class="mt-10 grid lg:grid-cols-[240px_1fr] gap-8">
+            <div class="mt-10 grid gap-8 lg:grid-cols-[240px_1fr]">
                 <aside class="space-y-3">
-                    <h3 class="font-semibold text-sm">Filter by brand</h3>
+                    <h3 class="text-sm font-semibold">Filter by brand</h3>
 
                     <button
                         type="button"
-                        class="block w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors"
+                        class="block w-full rounded-xl px-4 py-2.5 text-left text-sm transition-colors"
                         :class="activeBrandId === null ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'"
                         @click="activeBrandId = null"
                     >
@@ -144,18 +141,26 @@ onMounted(() => {
                         v-for="b in brands"
                         :key="b.id"
                         type="button"
-                        class="block w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors"
+                        class="flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-left text-sm transition-colors"
                         :class="activeBrandId === b.id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'"
                         @click="activeBrandId = Number(b.id)"
                     >
-                        <span class="mr-2">{{ b.logo }}</span>{{ b.name }}
+                        <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
+                            <img
+                                v-if="b.image"
+                                :src="b.image"
+                                :alt="b.name"
+                                class="h-full w-full object-cover"
+                            />
+                        </span>
+                        <span class="truncate">{{ b.name }}</span>
                     </button>
                 </aside>
 
                 <div>
-                    <h2 class="text-xl font-bold mb-4">
+                    <h2 class="mb-4 text-xl font-bold">
                         {{ activeCategory?.name }} ·
-                        <span class="text-muted-foreground font-normal">
+                        <span class="font-normal text-muted-foreground">
                             {{ filteredProducts.length }} products
                         </span>
                     </h2>
@@ -164,7 +169,7 @@ onMounted(() => {
                         <p class="text-muted-foreground">No products in this combination.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                         <ProductCard v-for="p in filteredProducts" :key="p.id" :product="p" />
                     </div>
                 </div>

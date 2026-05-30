@@ -14,7 +14,7 @@ class BrandController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Brand::query();
+        $query = Brand::query()->withCount('products');
 
         if ($request->search) {
             $query->where('name', 'like', '%' . $request->search . '%');
@@ -27,6 +27,7 @@ class BrandController extends Controller
                 'id' => $brand->id,
                 'name' => $brand->name,
                 'image' => $brand->image,
+                'products_count' => $brand->products_count,
                 // The 'status' accessor returns 'Active'/'Inactive'
                 'status' => $brand->status,
                 // We send the raw boolean value for toggles/switches in the UI

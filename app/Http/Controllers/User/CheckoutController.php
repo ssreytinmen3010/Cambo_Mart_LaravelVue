@@ -8,6 +8,7 @@ use App\Models\AdminPanel\Order;
 use App\Models\AdminPanel\OrderItem;
 use App\Models\AdminPanel\Product;
 use App\Models\Cart;
+use App\Models\HistoryOrder;
 use App\Models\Setting;
 use App\Services\Bakong\BakongKhqrService;
 use Illuminate\Http\Request;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class CheckoutController extends Controller
 {
@@ -103,6 +105,12 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            HistoryOrder::query()->create([
+                'user_id' => Auth::id(),
+                'order_id' => $order->id,
+                'address_id' => $address->id,
+            ]);
+
             $bakongQr = null;
 
             if ($isOnline) {
@@ -110,7 +118,6 @@ class CheckoutController extends Controller
                     'account_id' => Setting::get('bakong_account_id', config('services.bakong.account_id')),
                     'merchant_name' => config('services.bakong.merchant_name', 'DAVIT YEM'),
                     'merchant_city' => config('services.bakong.merchant_city', 'Phnom Penh'),
-                    'merchant_id' => config('services.bakong.merchant_id', '123456'),
                     'acquiring_bank' => config('services.bakong.acquiring_bank', 'Dev Bank'),
                     'merchant_category_code' => config('services.bakong.merchant_category_code', '5999'),
                     'currency' => config('services.bakong.currency', 'USD'),
@@ -153,5 +160,47 @@ class CheckoutController extends Controller
 
             return $response;
         });
+    }
+
+    public function index()
+    {
+        $cart = Cart::query()
+            ->where('user_id', Auth::id())
+            ->with(['items.product'])
+            ->first();
+
+        return Inertia::render('User/Checkout/Index', [
+            'cart' => $cart?->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'discount_amount' => $item->discount_amount,
+                    'product' => [
+                        'id' => $item->product->id,
+                        'name' => $item->product->name,
+                        'image' => $item->product->image,
+                        'product_code' => $item->product->product_code,
+                    ],
+                ];
+            }) ?? [],
+        ]);
+    }
+
+    public function qrImage($orderNumber)
+    {
+        $order = Order::query()
+            ->where('order_number', $orderNumber)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if (!$order->bakong_qr) {
+            abort(404, 'QR code not found for this order');
+        }
+
+        return response($order->bakong_qr)
+            ->header('Content-Type', 'image/svg+xml')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 }

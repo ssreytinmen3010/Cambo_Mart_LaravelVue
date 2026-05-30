@@ -120,6 +120,7 @@ function goToPage(url) {
         <thead class="bg-slate-50">
           <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             <th class="px-6 py-3">Brand Info</th>
+            <th class="px-6 py-3">Total Product</th>
             <th class="px-6 py-3">Created</th>
             <th class="px-6 py-3">Updated</th>
             <th class="px-6 py-3 text-center">Status</th>
@@ -137,6 +138,7 @@ function goToPage(url) {
                 <div class="text-sm font-bold text-slate-700">{{ brand.name }}</div>
               </div>
             </td>
+            <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ brand.products_count ?? 0 }}</td>
             <td class="px-6 py-4 text-[11px] text-slate-500 font-medium">{{ brand.created_at }}</td>
             <td class="px-6 py-4 text-[11px] text-slate-500 font-medium">{{ brand.updated_at }}</td>
             <td class="px-6 py-4 text-center">

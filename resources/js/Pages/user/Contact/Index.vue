@@ -1,12 +1,19 @@
 <script setup>
-import { ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { Mail, Phone, MapPin, MessageCircle } from 'lucide-vue-next';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
 
-const contactForm = ref(null);
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user);
 const submitted = ref(false);
+const contactForm = useForm({
+    full_name: authUser.value?.name ?? '',
+    email: authUser.value?.email ?? '',
+    subject: '',
+    message: '',
+});
 
 const contacts = [
     { icon: MapPin, title: 'Visit us', value: 'Russian Blvd, Phnom Penh, Cambodia' },
@@ -16,11 +23,18 @@ const contacts = [
 ];
 
 function handleSubmit() {
-    submitted.value = true;
-    contactForm.value?.reset();
-    setTimeout(() => {
-        submitted.value = false;
-    }, 4000);
+    contactForm.post(route('contact.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            submitted.value = true;
+            contactForm.reset('subject', 'message');
+            contactForm.full_name = authUser.value?.name ?? '';
+            contactForm.email = authUser.value?.email ?? '';
+            setTimeout(() => {
+                submitted.value = false;
+            }, 4000);
+        },
+    });
 }
 </script>
 
@@ -45,29 +59,55 @@ function handleSubmit() {
 
             <div class="mt-10 grid lg:grid-cols-[1fr_360px] gap-8">
                 <form
-                    ref="contactForm"
                     class="rounded-3xl bg-card border border-border/60 shadow-soft p-6 md:p-8 space-y-4"
                     @submit.prevent="handleSubmit"
                 >
                     <div class="grid sm:grid-cols-2 gap-3">
                         <label class="block">
                             <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Full name</span>
-                            <input required class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                            <input
+                                v-model="contactForm.full_name"
+                                required
+                                type="text"
+                                class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                placeholder="Enter your full name"
+                            />
                         </label>
                         <label class="block">
                             <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Email</span>
-                            <input required type="email" class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                            <input
+                                v-model="contactForm.email"
+                                required
+                                type="email"
+                                class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                placeholder="Enter your email"
+                            />
                         </label>
                     </div>
                     <label class="block">
                         <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Subject</span>
-                        <input class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                        <input
+                            v-model="contactForm.subject"
+                            type="text"
+                            class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                            placeholder="How can we help?"
+                        />
                     </label>
                     <label class="block">
                         <span class="text-xs font-medium text-muted-foreground mb-1.5 block">Message</span>
-                        <textarea required rows="6" class="w-full rounded-xl border bg-background p-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none" />
+                        <textarea
+                            v-model="contactForm.message"
+                            required
+                            rows="6"
+                            class="w-full rounded-xl border bg-background p-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 resize-none"
+                            placeholder="Write your message here..."
+                        />
                     </label>
-                    <button type="submit" class="rounded-full bg-primary px-7 py-3 text-primary-foreground font-medium hover:bg-primary/90">
+                    <button
+                        type="submit"
+                        class="rounded-full bg-primary px-7 py-3 text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-60"
+                        :disabled="contactForm.processing"
+                    >
                         Send message
                     </button>
                 </form>

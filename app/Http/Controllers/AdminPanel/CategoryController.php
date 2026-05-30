@@ -12,7 +12,7 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Category::with('brand');
+        $query = Category::with(['brand', 'brands'])->withCount('products');
 
         if ($request->search) {
             $query->where('name', 'like', '%' . $request->search . '%');
@@ -25,9 +25,15 @@ class CategoryController extends Controller
                 'id' => $category->id,
                 'name' => $category->name,
                 'brand_id' => $category->brand_id,
+                'brand_ids' => $category->brands->pluck('id')->values()->all(),
                 'description' => $category->description,
                 'image' => $category->image,
-                'brand' => $category->brand ? $category->brand->name : 'N/A',
+                'brand' => $category->brands->pluck('name')->filter()->implode(', ') ?: ($category->brand ? $category->brand->name : 'N/A'),
+                'brands' => $category->brands->map(fn ($brand) => [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                ])->values()->all(),
+                'products_count' => $category->products_count,
                 // 'status' returns 'Active'/'Inactive' via model accessor
                 'status' => $category->status, 
                 // 'is_active' returns raw boolean for the toggle switch
@@ -64,30 +70,36 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'brand_id' => 'required|exists:brands,id',
+            'brand_ids' => 'required|array|min:1',
+            'brand_ids.*' => 'exists:brands,id',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
             'status' => 'boolean',
         ]);
 
-        Category::create([
+        $category = Category::create([
             'name' => $request->name,
-            'brand_id' => $request->brand_id,
+            'brand_id' => $request->brand_ids[0],
             'description' => $request->description,
             'image' => $request->image,
             'status' => $request->status ? 1 : 0,
         ]);
+
+        $category->brands()->sync($request->brand_ids);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category created successfully.');
     }
 
     public function edit(Category $category)
     {
+        $category->load('brands');
+
         return Inertia::render('Admin/Categories/Edit', [
             'category' => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'brand_id' => $category->brand_id,
+                'brand_ids' => $category->brands->pluck('id')->values()->all(),
                 'description' => $category->description,
                 'image' => $category->image,
                 'is_active' => $category->getAttributes()['status'] == 1,
@@ -100,7 +112,8 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'brand_id' => 'required|exists:brands,id',
+            'brand_ids' => 'required|array|min:1',
+            'brand_ids.*' => 'exists:brands,id',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
             'status' => 'boolean',
@@ -114,11 +127,13 @@ class CategoryController extends Controller
 
         $category->update([
             'name' => $request->name,
-            'brand_id' => $request->brand_id,
+            'brand_id' => $request->brand_ids[0],
             'description' => $request->description,
             'image' => $request->image,
             'status' => $request->status ? 1 : 0,
         ]);
+
+        $category->brands()->sync($request->brand_ids);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category updated successfully.');
     }

@@ -140,6 +140,7 @@ const navItems = [
   { title: "Promotions", path: "/admin/promotions", icon: "mdi-percent" },
   { title: "Orders", path: "/admin/orders", icon: "mdi-tray-full" },
   { title: "Reviews", path: "/admin/reviews", icon: "mdi-star-outline" },
+  { title: "Contacts", path: "/admin/contacts", icon: "mdi-email-outline" },
   // { title: "Reports", path: "/admin/reports", icon: "mdi-chart-box-outline" },
   { title: "System", isHeader: true },
   { title: "Settings", path: "/admin/settings", icon: "mdi-cog-outline" },

@@ -12,6 +12,7 @@ use App\Http\Controllers\AdminPanel\PromotionController;
 use App\Http\Controllers\AdminPanel\OrderController;
 use App\Http\Controllers\AdminPanel\ReviewController;
 use App\Http\Controllers\AdminPanel\LocationController;
+use App\Http\Controllers\AdminPanel\ContactController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\CheckoutController;
@@ -21,8 +22,10 @@ use App\Models\User;
 use App\Models\AdminPanel\Product;
 use App\Models\AdminPanel\Category;
 use App\Models\AdminPanel\Brand;
+use App\Models\AdminPanel\Order;
 use App\Models\AdminPanel\Review;
 use App\Models\AdminPanel\Promotion;
+use App\Models\HistoryOrder;
 use App\Http\Controllers\AdminPanel\SettingController;
 use Illuminate\Support\Facades\DB;
 
@@ -45,9 +48,18 @@ Route::get('/', function () {
     $categories = Category::query()
         ->where('status', 1)
         ->select(['id', 'name', 'image', 'qty_item'])
+        ->withCount('products')
         ->orderBy('name')
         ->limit(8)
-        ->get();
+        ->get()
+        ->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'image' => $category->image,
+                'qty_item' => $category->products_count,
+            ];
+        });
 
     $products = Product::query()
         ->where('status', 1)
@@ -122,6 +134,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/reviews/my', [UserReviewController::class, 'myRatings'])->name('user.reviews.my');
 
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/bakong-qr/{order_number}', [CheckoutController::class, 'qrImage'])->name('checkout.bakong-qr');
 });
 
 Route::prefix('')->group(function () {
@@ -129,8 +142,17 @@ Route::prefix('')->group(function () {
         $categories = Category::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'qty_item'])
+            ->withCount('products')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'image' => $category->image,
+                    'qty_item' => $category->products_count,
+                ];
+            });
 
         $brands = Brand::query()
             ->where('status', 1)
@@ -162,15 +184,104 @@ Route::prefix('')->group(function () {
         ]);
     })->name('shop');
     Route::get('/cart', fn () => Inertia::render('User/Cart/Index'))->name('cart');
-    Route::get('/checkout', fn () => Inertia::render('User/Checkout/Index'))->name('checkout');
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::get('/wishlist', fn () => Inertia::render('User/Wishlist/Index'))->name('wishlist');
-    Route::get('/account', fn () => Inertia::render('User/Profile/Index'))->name('user.profile');
+    Route::get('/account', function () {
+        $historyOrders = HistoryOrder::query()
+            ->where('user_id', auth()->id())
+            ->with([
+                'order' => function ($query) {
+                    $query->select([
+                        'id',
+                        'order_number',
+                        'address_id',
+                        'payment_method',
+                        'subtotal_amount',
+                        'discount_amount',
+                        'total_amount',
+                        'order_status',
+                        'payment_status',
+                        'created_at',
+                    ])
+                        ->with([
+                            'address:id,name,phone,address,floor',
+                            'items' => function ($items) {
+                                $items->select(['id', 'order_id', 'product_id', 'qty', 'unit_price'])
+                                    ->with(['product:id,name,image']);
+                            },
+                        ])
+                        ->withCount('items');
+                },
+            ])
+            ->latest()
+            ->get()
+            ->map(function ($historyOrder) {
+                $order = $historyOrder->order;
+
+                return [
+                    'id' => $order?->order_number ?? ('ORDER-' . $historyOrder->order_id),
+                    'date' => optional($order?->created_at)->format('M d, Y') ?? now()->format('M d, Y'),
+                    'status' => $order?->order_status ?? Order::ORDER_PENDING,
+                    'total' => (float) ($order?->total_amount ?? 0),
+                    'items' => (int) ($order?->items_count ?? 0),
+                    'payment_method' => $order?->payment_method ?? null,
+                    'subtotal' => (float) ($order?->subtotal_amount ?? 0),
+                    'discount' => (float) ($order?->discount_amount ?? 0),
+                    'address' => $order?->address ? [
+                        'name' => $order->address->name,
+                        'phone' => $order->address->phone,
+                        'address' => $order->address->address,
+                        'floor' => $order->address->floor,
+                    ] : null,
+                    'items_list' => ($order?->items ?? collect())->map(function ($item) {
+                        return [
+                            'name' => $item->product?->name ?? 'Product',
+                            'qty' => (int) $item->qty,
+                            'unit_price' => (float) $item->unit_price,
+                            'line_total' => (float) ($item->qty * $item->unit_price),
+                        ];
+                    })->values(),
+                ];
+            });
+
+        $recentActivities = $historyOrders
+            ->take(5)
+            ->map(function ($order) {
+                $status = strtoupper((string) ($order['status'] ?? Order::ORDER_PENDING));
+                $amount = number_format((float) ($order['total'] ?? 0), 2);
+
+                if ($status === Order::ORDER_COMPLETED) {
+                    return "Completed order {$order['id']} · \${$amount}";
+                }
+
+                if ($status === Order::ORDER_CANCELLED) {
+                    return "Cancelled order {$order['id']} · \${$amount}";
+                }
+
+                return "Placed order {$order['id']} · \${$amount}";
+            })
+            ->values();
+
+        return Inertia::render('User/Profile/Index', [
+            'historyOrders' => $historyOrders,
+            'recentActivities' => $recentActivities,
+        ]);
+    })->name('user.profile');
     Route::get('/categories', function () {
         $categories = Category::query()
             ->where('status', 1)
             ->select(['id', 'name', 'image', 'qty_item'])
+            ->withCount('products')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'image' => $category->image,
+                    'qty_item' => $category->products_count,
+                ];
+            });
 
         $brands = Brand::query()
             ->where('status', 1)
@@ -234,6 +345,7 @@ Route::prefix('')->group(function () {
     })->name('brand');
     Route::get('/about', fn () => Inertia::render('User/About/Index'))->name('about');
     Route::get('/contact', fn () => Inertia::render('User/Contact/Index'))->name('contact');
+    Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
     Route::redirect('/root', '/')->name('root');
 });
 
@@ -297,6 +409,8 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function () {
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('admin.reviews.update');
     Route::post('/reviews/bulk-update', [ReviewController::class, 'bulkUpdate'])->name('admin.reviews.bulk-update');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('admin.reviews.destroy');
+
+    Route::get('/contacts', [ContactController::class, 'index'])->name('admin.contacts.index');
 
     Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings.index');
     Route::put('/settings/profile', [SettingController::class, 'updateProfile'])->name('admin.settings.update-profile');

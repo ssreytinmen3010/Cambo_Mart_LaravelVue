@@ -64,7 +64,6 @@ const brands = computed(() =>
     (props.brands || []).map((brand) => ({
         ...brand,
         id: Number(brand.id),
-        logo: '🏷️',
     }))
 );
 
@@ -141,15 +140,23 @@ onMounted(() => {
                     <div class="bg-card rounded-2xl p-4 border border-border/60">
                         <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Category</p>
                         <div class="space-y-2">
-                            <label v-for="c in categories" :key="c.id" class="flex items-center gap-2.5 cursor-pointer text-sm">
+                            <label v-for="c in categories" :key="c.id" class="flex items-center gap-2 cursor-pointer text-xs">
                                 <input
                                     type="checkbox"
                                     :checked="activeCats.includes(c.id)"
-                                    class="h-4 w-4 rounded accent-primary"
+                                    class="sr-only"
                                     @change="toggleInArray(activeCats, c.id)"
                                 />
-                                <span>{{ c.name }}</span>
-                                <span class="ml-auto text-xs text-muted-foreground">{{ c.count }}</span>
+                                <span
+                                    class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
+                                    :class="activeCats.includes(c.id) ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
+                                >
+                                    <svg v-if="activeCats.includes(c.id)" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                        <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                                <span class="font-medium leading-none">{{ c.name }}</span>
+                                <span class="ml-auto text-[10px] text-muted-foreground">{{ c.count }}</span>
                             </label>
                         </div>
                     </div>
@@ -157,25 +164,62 @@ onMounted(() => {
                     <div class="bg-card rounded-2xl p-4 border border-border/60">
                         <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Brand</p>
                         <div class="space-y-2">
-                            <label v-for="b in brands" :key="b.id" class="flex items-center gap-2.5 cursor-pointer text-sm">
+                            <label v-for="b in brands" :key="b.id" class="flex items-center gap-2 cursor-pointer text-xs">
                                 <input
                                     type="checkbox"
                                     :checked="activeBrands.includes(b.id)"
-                                    class="h-4 w-4 rounded accent-primary"
+                                    class="sr-only"
                                     @change="toggleInArray(activeBrands, b.id)"
                                 />
-                                <span>{{ b.logo }} {{ b.name }}</span>
+                                <span
+                                    class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
+                                    :class="activeBrands.includes(b.id) ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
+                                >
+                                    <svg v-if="activeBrands.includes(b.id)" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                        <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                                <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted">
+                                    <img
+                                        v-if="b.image"
+                                        :src="b.image"
+                                        :alt="b.name"
+                                        class="h-full w-full object-cover"
+                                    />
+                                    <span v-else class="text-[9px] font-bold text-muted-foreground">
+                                        {{ b.name.charAt(0) }}
+                                    </span>
+                                </span>
+                                <span class="font-medium leading-none">{{ b.name }}</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="bg-card rounded-2xl p-4 border border-border/60 space-y-2">
                         <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Promotions</p>
-                        <label class="flex items-center gap-2.5 text-sm cursor-pointer">
-                            <input v-model="onSaleOnly" type="checkbox" class="h-4 w-4 rounded accent-primary" /> On sale
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                            <input v-model="onSaleOnly" type="checkbox" class="sr-only" />
+                            <span
+                                class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
+                                :class="onSaleOnly ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
+                            >
+                                <svg v-if="onSaleOnly" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                    <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </span>
+                            <span class="font-medium leading-none">On sale</span>
                         </label>
-                        <label class="flex items-center gap-2.5 text-sm cursor-pointer">
-                            <input v-model="inStockOnly" type="checkbox" class="h-4 w-4 rounded accent-primary" /> In stock only
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                            <input v-model="inStockOnly" type="checkbox" class="sr-only" />
+                            <span
+                                class="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition"
+                                :class="inStockOnly ? 'border-primary bg-primary text-white' : 'border-black/60 bg-white text-primary'"
+                            >
+                                <svg v-if="inStockOnly" class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                    <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </span>
+                            <span class="font-medium leading-none">In stock only</span>
                         </label>
                     </div>
 

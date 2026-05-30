@@ -103,7 +103,7 @@ function getItemCode(item) {
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200">
+        <table class="min-w-[1400px] divide-y divide-slate-200">
         <thead class="bg-slate-50">
           <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
             <th class="px-6 py-3">Order</th>
@@ -251,7 +251,7 @@ function getItemCode(item) {
     <Transition name="modal-fade">
       <div v-if="showViewModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" @click="showViewModal = false"></div>
-        <div class="relative bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-pop flex flex-col max-h-[90vh]">
+        <div class="relative bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-pop flex flex-col max-h-[90vh] min-h-0">
           <!-- Header -->
           <div class="px-8 py-6 flex justify-between items-center border-b border-slate-100">
             <div>
@@ -263,7 +263,26 @@ function getItemCode(item) {
             </button>
           </div>
 
-          <div class="p-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/30">
+          <div class="p-8 overflow-y-auto custom-scrollbar flex-1 min-h-0 bg-slate-50/30">
+            <div class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div class="rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order No.</p>
+                <p class="mt-2 text-lg font-black text-slate-900">#{{ viewOrder.order_number }}</p>
+              </div>
+              <div class="rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Status</p>
+                <p class="mt-2 text-lg font-black text-slate-900">{{ viewOrder.order_status }}</p>
+              </div>
+              <div class="rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment</p>
+                <p class="mt-2 text-lg font-black text-slate-900">{{ viewOrder.payment_status }}</p>
+              </div>
+              <div class="rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</p>
+                <p class="mt-2 text-lg font-black text-slate-900">{{ viewOrder.payment_method || '—' }}</p>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <!-- Left: Customer & Status -->
               <div class="lg:col-span-1 space-y-6">
@@ -314,6 +333,31 @@ function getItemCode(item) {
                     </div>
                   </div>
                 </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                  <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Delivery & Promo</h3>
+                  <div>
+                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Address</p>
+                    <p class="text-sm text-slate-700 leading-6">{{ viewOrder.customer_address || 'No address provided' }}</p>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subtotal</p>
+                      <p class="mt-1 text-sm font-black text-slate-900">${{ viewOrder.subtotal }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discount</p>
+                      <p class="mt-1 text-sm font-black text-rose-600">-${{ viewOrder.discount }}</p>
+                    </div>
+                  </div>
+                  <div class="rounded-2xl bg-amber-50 p-4 border border-amber-100">
+                    <p class="text-[10px] font-black text-amber-700 uppercase tracking-widest">Promotion</p>
+                    <p class="mt-1 text-sm font-black text-amber-800">{{ viewOrder.promotion_code }}</p>
+                    <p v-if="viewOrder.promotion_description" class="mt-1 text-xs text-amber-700/80 leading-5">
+                      {{ viewOrder.promotion_description }}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <!-- Right: Order Items & Summary -->
@@ -322,7 +366,7 @@ function getItemCode(item) {
                   <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Items ({{ viewOrder.items.length }})</h3>
                   </div>
-                  <div class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
+                  <div class="divide-y divide-slate-50">
                     <div v-for="item in viewOrder.items" :key="item.id" class="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                       <div class="flex items-center gap-4">
                         <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden border border-slate-100 p-1 flex items-center justify-center">
