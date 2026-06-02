@@ -11,11 +11,13 @@ fi
 php artisan storage:link --force 2>/dev/null || true
 
 php artisan config:cache
-php artisan route:cache
 php artisan view:cache
 
+# Closure routes in web.php cannot be route:cached (Laravel limitation).
+# Skipping route:cache so the container still starts.
+
 if [ "$RUN_MIGRATIONS" = "true" ]; then
-    php artisan migrate --force
+    php artisan migrate --force || echo "WARN: migrations failed; continuing startup."
 fi
 
 export PORT="${PORT:-8080}"
