@@ -69,7 +69,7 @@ COPY --from=frontend /app/public/build ./public/build
 COPY . .
 
 RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template

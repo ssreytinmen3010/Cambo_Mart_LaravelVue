@@ -44,6 +44,8 @@ use Illuminate\Support\Facades\DB;
 |
 */
 
+Route::get('/ping', fn () => response('pong', 200, ['Content-Type' => 'text/plain']));
+
 Route::get('/', function () {
     if (auth()->check() && auth()->user()->role->name === 'admin') {
         return redirect()->route('admin.dashboard');
