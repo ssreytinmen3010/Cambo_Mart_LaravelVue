@@ -43,7 +43,6 @@ FROM php:8.2-fpm-alpine
 
 RUN apk add --no-cache \
     nginx \
-    supervisor \
     gettext \
     curl \
     freetype-dev \
@@ -74,9 +73,10 @@ RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cac
     && chmod -R 775 storage bootstrap/cache
 
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/start.sh \
+    && rm -f /etc/nginx/http.d/default.conf
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
@@ -86,4 +86,3 @@ ENV APP_ENV=production \
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
