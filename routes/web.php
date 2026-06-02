@@ -12,6 +12,7 @@ use App\Http\Controllers\AdminPanel\PromotionController;
 use App\Http\Controllers\AdminPanel\PromotionSeasonController;
 use App\Http\Controllers\AdminPanel\DeliveryController;
 use App\Http\Controllers\AdminPanel\OrderController;
+use App\Http\Controllers\AdminPanel\DashboardController;
 use App\Http\Controllers\AdminPanel\ReviewController;
 use App\Http\Controllers\AdminPanel\LocationController;
 use App\Http\Controllers\AdminPanel\ContactController;
@@ -115,17 +116,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/upload-image', [ImageController::class, 'upload'])->name('images.upload');
 });
 
-Route::get('/admin/dashboard', function () {
-    return Inertia::render('Admin/Dashboard', [
-        'stats' => [
-            'users' => User::count(),
-            'products' => Product::count(),
-            'categories' => Category::count(),
-            'brands' => Brand::count(),
-            'orders' => \App\Models\AdminPanel\Order::count(),
-        ]
-    ]);
-})->middleware(['auth', 'verified', 'role:admin'])->name('admin.dashboard');
+Route::get('/admin/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'role:admin'])
+    ->name('admin.dashboard');
 
 Route::get('/user/dashboard', function () {
     return Inertia::render('User/Dashboard');
@@ -145,6 +138,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/reviews/my', [UserReviewController::class, 'myRatings'])->name('user.reviews.my');
 
     Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.apply-coupon');
+    Route::get('/checkout/geocode', [CheckoutController::class, 'geocode'])->name('checkout.geocode');
+    Route::get('/checkout/reverse-geocode', [CheckoutController::class, 'reverseGeocode'])->name('checkout.reverse-geocode');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 });
 

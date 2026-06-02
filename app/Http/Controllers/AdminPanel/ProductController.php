@@ -67,7 +67,16 @@ class ProductController extends Controller
 
         return Inertia::render('Admin/Product/Index', [
             'products' => $products,
-            'categories' => Category::where('status', 1)->select('id', 'name', 'brand_id')->get(),
+            'categories' => Category::where('status', 1)
+                ->with('brands:id')
+                ->get(['id', 'name', 'brand_id'])
+                ->map(fn ($category) => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'brand_id' => $category->brand_id,
+                    'brand_ids' => $category->brands->pluck('id')->values()->all(),
+                ])
+                ->values(),
             'brands' => Brand::where('status', 1)->select('id', 'name')->get(),
             'statusStocks' => [
                 ['id' => Product::STATUS_SALE, 'name' => Product::STATUS_SALE, 'label' => 'Sale'],

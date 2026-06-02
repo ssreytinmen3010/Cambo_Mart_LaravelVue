@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Truck, Wallet, CheckCircle2, ShieldCheck, Clock3, X, QrCode, Download, MapPin, Navigation, Loader2 } from 'lucide-vue-next';
+import { Truck, Wallet, CheckCircle2, ShieldCheck, Clock3, X, QrCode, Download, MapPin, Navigation, Loader2, Wifi } from 'lucide-vue-next';
 import QRCode from 'qrcode';
 import UserLayout from '@/Layouts/UserLayout.vue';
 import UserBreadcrumb from '@/Components/User/UserBreadcrumb.vue';
+import DeliveryLocationMap from '@/Components/User/DeliveryLocationMap.vue';
 import { useStore } from '@/composables/useStore';
 
 const { cart, cartSubtotal, cartDiscount, cartTotal, clearCart, ensureCartLoaded } = useStore();
@@ -12,6 +13,43 @@ const page = usePage();
 const authUser = computed(() => page.props.auth?.user ?? null);
 const errors = computed(() => page.props.errors ?? {});
 const delivery = computed(() => page.props.delivery ?? {});
+const savedAddress = computed(() => page.props.savedAddress ?? null);
+const storeSettings = computed(() => page.props.store ?? page.props.appSettings ?? {});
+
+function parseMapCoordinate(value, fallback) {
+    const parsed = Number(String(value ?? '').trim());
+
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeStoreCoordinates(lat, lng) {
+    let normalizedLat = parseMapCoordinate(lat, 11.5564);
+    let normalizedLng = parseMapCoordinate(lng, 104.9282);
+
+    // Fix common swapped lat/long entries (e.g. lat=104, lng=11 for Cambodia).
+    if (Math.abs(normalizedLat) > 50 && Math.abs(normalizedLng) < 50) {
+        return { lat: normalizedLng, lng: normalizedLat };
+    }
+
+    return { lat: normalizedLat, lng: normalizedLng };
+}
+
+const storeCoords = computed(() =>
+    normalizeStoreCoordinates(storeSettings.value.map_lat, storeSettings.value.map_long),
+);
+const storeLat = computed(() => storeCoords.value.lat);
+const storeLng = computed(() => storeCoords.value.lng);
+const storeName = computed(() => storeSettings.value.name ?? page.props.appSettings?.store_name ?? 'Store');
+const storeAddress = computed(() => storeSettings.value.address ?? page.props.appSettings?.address ?? '');
+const storeMapLabel = computed(() => {
+    if (storeName.value && storeAddress.value) {
+        return `${storeName.value} — ${storeAddress.value}`;
+    }
+
+    return storeName.value || storeAddress.value || 'Store';
+});
+
+const addressSource = ref(null);
 
 onMounted(() => {
     ensureCartLoaded();
@@ -20,6 +58,25 @@ onMounted(() => {
         form.value.name = authUser.value.name ?? form.value.name;
         form.value.phone = authUser.value.phone ?? form.value.phone;
         form.value.email = authUser.value.email ?? form.value.email;
+    }
+
+    if (savedAddress.value) {
+        form.value.address = savedAddress.value.address ?? form.value.address;
+        form.value.floor = savedAddress.value.floor ?? form.value.floor;
+
+        if (savedAddress.value.qty_kilo) {
+            form.value.qty_kilo = Number(savedAddress.value.qty_kilo);
+        }
+
+        addressSource.value = 'saved';
+        locationHint.value =
+            'Your last delivery address is shown below — it may not be where you are now. Tap GPS location for your current position, or edit the address.';
+    }
+
+    showAddressMap.value = true;
+
+    if (checkoutResult.value) {
+        showOrderSuccessModal.value = true;
     }
 
     void renderBakongQr();
@@ -47,11 +104,31 @@ const qrAmount = computed(() => {
     return placeOrderTotal.value.toFixed(2);
 });
 const checkoutResult = computed(() => page.props.flash?.checkout ?? null);
+const showOrderSuccessModal = ref(false);
+const orderSuccessDescription = computed(() => {
+    if (!checkoutResult.value) {
+        return '';
+    }
+
+    if (checkoutResult.value.payment_method === 'online') {
+        return `Order ${checkoutResult.value.order_number} placed successfully. Payment confirmed.`;
+    }
+
+    return `Order ${checkoutResult.value.order_number} placed. Pay cash on delivery when your order arrives.`;
+});
+
+watch(checkoutResult, (result) => {
+    if (result) {
+        showOrderSuccessModal.value = true;
+        showKhqrModal.value = false;
+    }
+});
+
 const expiryLabel = computed(() => formatDuration(paymentExpirySeconds.value));
 const deliveryFeePerKg = computed(() => Number(delivery.value?.fee_amount_per ?? 0));
 const addressQtyKg = computed(() => Number(form.value.qty_kilo || 1));
 const cartDeliveryFee = computed(() => deliveryFeePerKg.value * addressQtyKg.value);
-const deliveryFormulaLabel = computed(() => `Delivery $${deliveryFeePerKg.value.toFixed(2)} × ${addressQtyKg.value.toFixed(2)} KG`);
+const deliveryFormulaLabel = computed(() => `Delivery $${deliveryFeePerKg.value.toFixed(2)} × ${addressQtyKg.value.toFixed(2)} KM`);
 const placeOrderTotal = computed(() => Math.max(0, total.value + couponDeliveryFee.value - couponDiscount.value));
 const checkoutDeliveryFee = computed(() => Number(checkoutResult.value?.delivery_fee ?? 0));
 const checkoutDiscountType = computed(() => checkoutResult.value?.discount_type ?? '—');
@@ -103,11 +180,9 @@ const deliveryLat = ref(null);
 const deliveryLng = ref(null);
 const mapLoading = ref(false);
 const mapError = ref('');
+const locationHint = ref('');
+const geolocationBlocked = ref(false);
 let geocodeTimer = null;
-
-const storeLat = computed(() => Number(page.props.appSettings?.map_lat) || 11.5564);
-const storeLng = computed(() => Number(page.props.appSettings?.map_long) || 104.9282);
-const storeAddress = computed(() => page.props.appSettings?.address || 'Store');
 
 const deliveryDistanceKm = computed(() => {
     if (deliveryLat.value == null || deliveryLng.value == null) {
@@ -115,6 +190,22 @@ const deliveryDistanceKm = computed(() => {
     }
 
     return haversineKm(storeLat.value, storeLng.value, deliveryLat.value, deliveryLng.value);
+});
+
+const hasDeliveryLocation = computed(
+    () => deliveryLat.value != null && deliveryLng.value != null,
+);
+
+const deliveryLocationLabel = computed(() => {
+    if (form.value.address.trim()) {
+        return form.value.address.trim();
+    }
+
+    if (!hasDeliveryLocation.value) {
+        return '';
+    }
+
+    return `${deliveryLat.value.toFixed(5)}, ${deliveryLng.value.toFixed(5)}`;
 });
 
 watch(deliveryDistanceKm, (distance) => {
@@ -125,15 +216,15 @@ watch(deliveryDistanceKm, (distance) => {
     form.value.qty_kilo = Number(distance.toFixed(3));
 });
 
-const addressMapUrl = computed(() => {
-    if (deliveryLat.value == null || deliveryLng.value == null) {
+const googleMapsUrl = computed(() => {
+    if (!hasDeliveryLocation.value) {
         return '';
     }
 
     const saddr = `${storeLat.value},${storeLng.value}`;
     const daddr = `${deliveryLat.value},${deliveryLng.value}`;
 
-    return `https://www.google.com/maps?saddr=${encodeURIComponent(saddr)}&daddr=${encodeURIComponent(daddr)}&hl=en&z=13&output=embed`;
+    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(saddr)}&destination=${encodeURIComponent(daddr)}`;
 });
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -150,88 +241,246 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 async function geocodeAddress(address) {
     const query = address?.trim();
 
-    if (!query || query.length < 4) {
+    if (!query || query.length < 3) {
         return false;
     }
 
-    const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
-        { headers: { Accept: 'application/json' } }
-    );
+    try {
+        const axios = (await import('axios')).default;
+        const response = await axios.get(route('checkout.geocode'), {
+            params: { q: query },
+            headers: { Accept: 'application/json' },
+        });
 
-    if (!response.ok) {
+        deliveryLat.value = Number(response.data.lat);
+        deliveryLng.value = Number(response.data.lng);
+
+        if (response.data.display_name) {
+            form.value.address = response.data.display_name;
+        }
+
+        addressSource.value = 'typed';
+
+        return true;
+    } catch (error) {
+        const message = error?.response?.data?.message;
+
+        if (message) {
+            throw new Error(message);
+        }
+
         return false;
     }
-
-    const results = await response.json();
-
-    if (!results?.length) {
-        return false;
-    }
-
-    deliveryLat.value = Number(results[0].lat);
-    deliveryLng.value = Number(results[0].lon);
-
-    return true;
 }
 
-function useCurrentLocation() {
+function getGeolocationPosition(options) {
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+}
+
+async function refreshGeolocationPermission() {
+    if (!navigator.permissions?.query) {
+        return 'unknown';
+    }
+
+    try {
+        const status = await navigator.permissions.query({ name: 'geolocation' });
+        geolocationBlocked.value = status.state === 'denied';
+        return status.state;
+    } catch {
+        return 'unknown';
+    }
+}
+
+function applyGpsPosition(position) {
+    deliveryLat.value = position.coords.latitude;
+    deliveryLng.value = position.coords.longitude;
+    geolocationBlocked.value = false;
+    addressSource.value = 'gps';
+    locationHint.value = '';
+    void fillAddressFromCoordinates(true);
+}
+
+function handleGeolocationFailure(error) {
+    mapError.value = '';
+
+    if (error?.code === 1) {
+        geolocationBlocked.value = true;
+        locationHint.value =
+            'GPS is blocked for this site. Use the steps below, try “Network location”, tap the map, or type your address.';
+        return;
+    }
+
+    if (error?.code === 3) {
+        locationHint.value =
+            'GPS timed out. Try again, use “Network location”, tap the map, or type your address.';
+        return;
+    }
+
+    locationHint.value =
+        'Could not read GPS. Try “Network location”, tap the map, or type your address.';
+}
+
+async function useCurrentLocation() {
     if (!navigator.geolocation) {
-        mapError.value = 'Location is not supported in this browser.';
+        locationHint.value =
+            'GPS is not supported in this browser. Use “Network location”, tap the map, or type your address.';
+        return;
+    }
+
+    if (!window.isSecureContext) {
+        locationHint.value =
+            'GPS needs HTTPS (or localhost). Use “Network location”, tap the map, or type your address.';
+        return;
+    }
+
+    const permission = await refreshGeolocationPermission();
+
+    if (permission === 'denied') {
+        locationHint.value =
+            'GPS is blocked for this site. Use the steps below, try “Network location”, or tap the map.';
         return;
     }
 
     mapLoading.value = true;
     mapError.value = '';
+    locationHint.value = permission === 'prompt' ? 'Allow location when your browser asks.' : '';
 
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            deliveryLat.value = position.coords.latitude;
-            deliveryLng.value = position.coords.longitude;
-            mapLoading.value = false;
-            void reverseGeocodeCurrentAddress();
-        },
-        () => {
-            mapLoading.value = false;
-            mapError.value = 'Could not access your location. Type your address or allow location access.';
-            void resolveDeliveryFromAddress();
-        },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    );
-}
-
-async function reverseGeocodeCurrentAddress() {
-    if (deliveryLat.value == null || deliveryLng.value == null || form.value.address.trim()) {
-        return;
-    }
+    const attempts = [
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 120000 },
+    ];
 
     try {
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${deliveryLat.value}&lon=${deliveryLng.value}`,
-            { headers: { Accept: 'application/json' } }
-        );
+        let lastError = null;
+
+        for (const options of attempts) {
+            try {
+                const position = await getGeolocationPosition(options);
+                applyGpsPosition(position);
+                return;
+            } catch (error) {
+                lastError = error;
+                if (error?.code === 1) {
+                    break;
+                }
+            }
+        }
+
+        handleGeolocationFailure(lastError);
+
+        if (form.value.address.trim().length >= 3) {
+            void resolveDeliveryFromAddress();
+        }
+    } finally {
+        mapLoading.value = false;
+    }
+}
+
+async function useNetworkLocation() {
+    mapLoading.value = true;
+    mapError.value = '';
+    locationHint.value = 'Detecting approximate location from your network…';
+
+    try {
+        const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
 
         if (!response.ok) {
-            return;
+            throw new Error('Network location unavailable');
         }
 
         const data = await response.json();
+        const lat = Number(data.latitude);
+        const lng = Number(data.longitude);
 
-        if (data?.display_name) {
-            form.value.address = data.display_name;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            throw new Error('Invalid coordinates');
+        }
+
+        deliveryLat.value = lat;
+        deliveryLng.value = lng;
+        geolocationBlocked.value = false;
+        addressSource.value = 'network';
+        locationHint.value =
+            'Network location is only approximate (often the wrong street). Enable GPS location for your real position, or drag the pin on the map.';
+        await fillAddressFromCoordinates(true);
+    } catch {
+        mapError.value =
+            'Could not detect network location. Tap the map to set your pin, enable GPS in browser settings, or type your address.';
+        locationHint.value = '';
+    } finally {
+        mapLoading.value = false;
+    }
+}
+
+function onMapLocationPick({ lat, lng }) {
+    deliveryLat.value = lat;
+    deliveryLng.value = lng;
+    mapError.value = '';
+    geolocationBlocked.value = false;
+    addressSource.value = 'map';
+    locationHint.value = '';
+    void fillAddressFromCoordinates(true);
+}
+
+function formatCoordinateAddress(lat, lng) {
+    return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+async function fillAddressFromCoordinates(force = false) {
+    if (deliveryLat.value == null || deliveryLng.value == null) {
+        return;
+    }
+
+    if (!force && form.value.address.trim()) {
+        return;
+    }
+
+    const lat = deliveryLat.value;
+    const lng = deliveryLng.value;
+
+    try {
+        const axios = (await import('axios')).default;
+        const response = await axios.get(route('checkout.reverse-geocode'), {
+            params: { lat, lng },
+            headers: { Accept: 'application/json' },
+        });
+
+        if (response.data?.display_name) {
+            form.value.address = response.data.display_name;
+            return;
         }
     } catch {
-        // Keep coordinates even if reverse geocoding fails.
+        // Fall through to coordinate fallback.
+    }
+
+    form.value.address = formatCoordinateAddress(lat, lng);
+
+    if (addressSource.value === 'gps') {
+        locationHint.value = 'Street name not found for this GPS point. Edit the address text or drag the pin on the map.';
+    } else if (addressSource.value === 'network') {
+        locationHint.value =
+            'Network location could not be converted to a street address. Enable GPS, drag the pin, or type your address.';
+    } else {
+        locationHint.value = 'Edit the delivery address above to match your exact location.';
     }
 }
 
 async function resolveDeliveryFromAddress() {
     const query = form.value.address?.trim();
 
-    if (!query || query.length < 4) {
-        deliveryLat.value = null;
-        deliveryLng.value = null;
-        mapError.value = '';
+    if (!query || query.length < 3) {
+        if (!hasDeliveryLocation.value) {
+            deliveryLat.value = null;
+            deliveryLng.value = null;
+        }
+
+        if (!query) {
+            mapError.value = '';
+            locationHint.value = '';
+        }
+
         return;
     }
 
@@ -244,29 +493,31 @@ async function resolveDeliveryFromAddress() {
         if (!found) {
             deliveryLat.value = null;
             deliveryLng.value = null;
-            mapError.value = 'Could not find this address on the map. Try a more specific address or use your current location.';
+            mapError.value = 'Could not find this address on the map. Include street/area in Phnom Penh, or tap “Use my location”.';
+        } else {
+            if (addressSource.value !== 'saved') {
+                locationHint.value = '';
+            }
         }
-    } catch {
+    } catch (error) {
         deliveryLat.value = null;
         deliveryLng.value = null;
-        mapError.value = 'Could not load the map for this address.';
+        mapError.value = error?.message || 'Could not load the map for this address.';
     } finally {
         mapLoading.value = false;
     }
 }
 
+function confirmAddressOnMap() {
+    if (form.value.address.trim().length >= 3) {
+        addressSource.value = addressSource.value === 'saved' ? 'saved' : 'typed';
+        void resolveDeliveryFromAddress();
+    }
+}
+
 function openAddressMap() {
     showAddressMap.value = true;
-    mapError.value = '';
-
-    if (form.value.address.trim()) {
-        void resolveDeliveryFromAddress();
-        return;
-    }
-
-    if (deliveryLat.value == null || deliveryLng.value == null) {
-        useCurrentLocation();
-    }
+    void refreshGeolocationPermission();
 }
 
 watch(
@@ -281,6 +532,10 @@ watch(
         }
 
         geocodeTimer = window.setTimeout(() => {
+            if (addressSource.value === 'saved') {
+                addressSource.value = 'typed';
+            }
+
             void resolveDeliveryFromAddress();
         }, 700);
     }
@@ -367,14 +622,27 @@ function submitOrder(payment_method) {
             payment_method,
         },
         {
+            preserveScroll: true,
             onFinish: () => {
                 placing.value = false;
             },
             onSuccess: () => {
                 clearCart();
+                showKhqrModal.value = false;
+                clearPaymentTimer();
+                clearPaymentSuccessTimer();
+            },
+            onError: () => {
+                showKhqrModal.value = false;
+                clearPaymentTimer();
+                clearPaymentSuccessTimer();
             },
         }
     );
+}
+
+function closeOrderSuccessModal() {
+    showOrderSuccessModal.value = false;
 }
 
 async function applyCoupon() {
@@ -512,6 +780,16 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
+            <div
+                v-if="Object.keys(errors).length"
+                class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+            >
+                <p class="font-semibold">Could not place your order</p>
+                <ul class="mt-1 list-disc pl-5 space-y-0.5">
+                    <li v-for="(message, key) in errors" :key="key">{{ message }}</li>
+                </ul>
+            </div>
+
             <form class="mt-8 grid lg:grid-cols-[1fr_380px] gap-8" @submit.prevent="placeOrder">
                 <div class="space-y-6">
                     <section class="rounded-3xl bg-card border border-border/60 shadow-soft p-6">
@@ -556,7 +834,16 @@ onBeforeUnmount(() => {
                                     class="w-full h-11 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                                     placeholder="Street, building, apartment"
                                     @focus="openAddressMap"
+                                    @input="openAddressMap"
                                 />
+                                <button
+                                    v-if="form.address.trim().length >= 3 && !hasDeliveryLocation"
+                                    type="button"
+                                    class="mt-2 text-xs font-semibold text-primary hover:underline"
+                                    @click="confirmAddressOnMap"
+                                >
+                                    Find this address on map
+                                </button>
                                 <div
                                     v-if="showAddressMap"
                                     class="mt-3 overflow-hidden rounded-2xl border border-border/60 bg-secondary/20"
@@ -569,12 +856,21 @@ onBeforeUnmount(() => {
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary hover:text-primary"
+                                                class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:opacity-50"
                                                 :disabled="mapLoading"
                                                 @click="useCurrentLocation"
                                             >
                                                 <Navigation class="h-3.5 w-3.5" />
-                                                Use my location
+                                                GPS location
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary/10 disabled:opacity-50"
+                                                :disabled="mapLoading"
+                                                @click="useNetworkLocation"
+                                            >
+                                                <Wifi class="h-3.5 w-3.5" />
+                                                Network location
                                             </button>
                                             <span
                                                 v-if="deliveryDistanceKm != null"
@@ -585,33 +881,95 @@ onBeforeUnmount(() => {
                                         </div>
                                     </div>
 
+                                    <div
+                                        v-if="geolocationBlocked && !mapLoading"
+                                        class="border-b border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+                                    >
+                                        <p class="font-semibold">Enable GPS for this website</p>
+                                        <ol class="mt-2 list-decimal space-y-1 pl-5 text-xs leading-relaxed">
+                                            <li>
+                                                Click the <strong>lock or tune icon</strong> left of the address bar →
+                                                <strong>Location</strong> → <strong>Allow</strong>
+                                            </li>
+                                            <li><strong>Reload</strong> this page</li>
+                                            <li>Click <strong>GPS location</strong> again and choose Allow</li>
+                                        </ol>
+                                        <p class="mt-2 text-xs leading-relaxed">
+                                            Windows: Settings → Privacy &amp; security → Location → On, and allow your
+                                            browser. Or use <strong>Network location</strong> / tap the map below.
+                                        </p>
+                                    </div>
+
+                                    <p
+                                        v-else-if="locationHint && !mapLoading"
+                                        class="border-b border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                                    >
+                                        {{ locationHint }}
+                                    </p>
+
                                     <div v-if="mapLoading" class="flex items-center justify-center gap-2 px-4 py-10 text-sm text-muted-foreground">
                                         <Loader2 class="h-4 w-4 animate-spin" />
                                         Loading map…
                                     </div>
 
-                                    <p v-else-if="mapError" class="px-4 py-3 text-sm text-rose-600">
-                                        {{ mapError }}
-                                    </p>
-
-                                    <div v-else-if="addressMapUrl" class="space-y-2">
-                                        <iframe
-                                            :src="addressMapUrl"
-                                            class="h-56 w-full border-0"
-                                            loading="lazy"
-                                            referrerpolicy="no-referrer-when-downgrade"
-                                            allowfullscreen
-                                            title="Delivery route map"
-                                        />
-                                        <p class="px-4 pb-3 text-xs text-muted-foreground">
-                                            Route from <span class="font-medium text-foreground">{{ storeAddress }}</span>
-                                            to your delivery address.
+                                    <template v-else>
+                                        <p v-if="mapError" class="border-b border-rose-200/80 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                                            {{ mapError }}
                                         </p>
-                                    </div>
 
-                                    <p v-else class="px-4 py-6 text-center text-sm text-muted-foreground">
-                                        Enter your address or tap “Use my location” to preview delivery distance.
-                                    </p>
+                                        <div
+                                            v-if="hasDeliveryLocation"
+                                            class="border-b border-border/60 bg-background px-4 py-3"
+                                        >
+                                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                Delivery location
+                                            </p>
+                                            <p class="mt-1 text-sm font-medium text-foreground break-words">
+                                                {{ deliveryLocationLabel }}
+                                            </p>
+                                        </div>
+
+                                        <DeliveryLocationMap
+                                            :key="`${storeLat}-${storeLng}`"
+                                            :lat="deliveryLat"
+                                            :lng="deliveryLng"
+                                            :store-lat="storeLat"
+                                            :store-lng="storeLng"
+                                            :store-name="storeMapLabel"
+                                            :delivery-label="deliveryLocationLabel"
+                                            @pick="onMapLocationPick"
+                                        />
+
+                                        <p class="px-4 py-3 text-center text-xs text-muted-foreground">
+                                            <template v-if="hasDeliveryLocation">
+                                                Drag the pin or tap the map to adjust your delivery spot.
+                                            </template>
+                                            <template v-else>
+                                                Tap the map, use GPS / Network location, or type your address above.
+                                            </template>
+                                        </p>
+
+                                        <div
+                                            v-if="hasDeliveryLocation"
+                                            class="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 pb-3 pt-2"
+                                        >
+                                            <p class="text-xs text-muted-foreground">
+                                                Route from
+                                                <span class="font-medium text-foreground">{{ storeMapLabel }}</span>
+                                                ({{ storeLat.toFixed(5) }}, {{ storeLng.toFixed(5) }}) to your delivery
+                                                address.
+                                            </p>
+                                            <a
+                                                :href="googleMapsUrl"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1.5 text-xs font-semibold text-primary transition hover:border-primary"
+                                            >
+                                                <Navigation class="h-3.5 w-3.5" />
+                                                Open in Maps
+                                            </a>
+                                        </div>
+                                    </template>
                                 </div>
                             </label>
 
@@ -726,7 +1084,7 @@ onBeforeUnmount(() => {
                     <div class="flex items-center justify-between gap-3">
                         <h3 class="font-bold">Your order</h3>
                         <span class="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">
-                            Delivery ${{ deliveryFeePerKg.toFixed(2) }} / {{ addressQtyKg.toFixed(2) }} KG
+                            Delivery ${{ deliveryFeePerKg.toFixed(2) }} / {{ addressQtyKg.toFixed(2) }} KM
                         </span>
                     </div>
                     <div class="mt-4 space-y-3 max-h-72 overflow-auto pr-1">
@@ -816,6 +1174,40 @@ onBeforeUnmount(() => {
         </div>
 
         <Transition name="modal-fade">
+            <div v-if="showOrderSuccessModal && checkoutResult" class="fixed inset-0 z-[210] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-md" @click="closeOrderSuccessModal"></div>
+                <div class="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+                    <div class="p-6 text-center">
+                        <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
+                            <CheckCircle2 class="h-8 w-8" />
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-slate-900">Order placed successfully!</h3>
+                        <p class="mt-2 text-sm text-slate-600">{{ orderSuccessDescription }}</p>
+                        <p class="mt-3 font-mono text-sm font-semibold text-primary">
+                            {{ checkoutResult.order_number }}
+                        </p>
+                        <div class="mt-6 flex flex-col gap-2 sm:flex-row">
+                            <Link
+                                :href="route('user.profile')"
+                                class="flex-1 rounded-full border border-border py-3 text-sm font-semibold text-foreground transition hover:bg-secondary"
+                                @click="closeOrderSuccessModal"
+                            >
+                                View orders
+                            </Link>
+                            <Link
+                                :href="route('shop')"
+                                class="flex-1 rounded-full bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow-glow transition hover:bg-primary/90"
+                                @click="closeOrderSuccessModal"
+                            >
+                                Continue shopping
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
+        <Transition name="modal-fade">
             <div v-if="showKhqrModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-md" @click="closeKhqrModal"></div>
 
@@ -902,7 +1294,7 @@ onBeforeUnmount(() => {
                                         :disabled="placing || paymentExpirySeconds === 0"
                                         @click="confirmOnlinePayment"
                                     >
-                                        Close
+                                        {{ placing ? 'Placing order…' : "I've paid · Confirm order" }}
                                     </button>
                                 </div>
                             </div>

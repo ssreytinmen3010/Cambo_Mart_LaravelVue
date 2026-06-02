@@ -8,7 +8,7 @@
   >
     <div class="h-20 flex items-center px-5 mb-4">
       <div class="flex items-center gap-3">
-        <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-tr from-slate-100 to-white rounded-2xl shadow-xl border border-white">
+        <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-tr rounded-2xl shadow-xl border ">
           <img 
             :src="storeLogoUrl" 
             :alt="storeName + ' Logo'" 

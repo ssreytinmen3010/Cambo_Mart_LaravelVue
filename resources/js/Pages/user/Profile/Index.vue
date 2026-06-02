@@ -35,10 +35,6 @@ const checkoutDescription = computed(() => {
     return `Order ${checkoutResult.value.order_number} placed. Pay cash on delivery when your order arrives.`;
 });
 
-onMounted(() => {
-    if (checkoutResult.value) showCheckoutResult.value = true;
-});
-
 const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
     { id: 'orders', label: 'Orders', icon: Package },
@@ -55,6 +51,13 @@ const mockOrders = [
 ];
 
 const currentTab = ref('overview');
+
+onMounted(() => {
+    if (checkoutResult.value) {
+        showCheckoutResult.value = true;
+        currentTab.value = 'orders';
+    }
+});
 
 const displayName = computed(() => authUser.value?.name ?? 'Guest User');
 const displayEmail = computed(() => authUser.value?.email ?? 'Sign in to view your account');
@@ -101,7 +104,7 @@ const updateProfileImagePreview = async (event) => {
 };
 
 const saveProfile = () => {
-    profileForm.put(route('profile.update'), {
+    profileForm.patch(route('profile.update'), {
         preserveScroll: true,
         onSuccess: () => router.reload({ only: ['auth'] }),
     });
@@ -313,9 +316,12 @@ const downloadReceiptPdf = () => {
                         <button
                             type="button"
                             class="w-full mt-5 rounded-full bg-primary py-3 text-primary-foreground font-medium shadow-glow hover:bg-primary/90"
-                            @click="showCheckoutResult = false"
+                            @click="
+                                showCheckoutResult = false;
+                                currentTab = 'orders';
+                            "
                         >
-                            OK
+                            View my orders
                         </button>
                     </div>
                 </div>

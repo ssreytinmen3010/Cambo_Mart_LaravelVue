@@ -11,6 +11,8 @@ use App\Models\Cart;
 use App\Models\Delivery;
 use App\Models\HistoryOrder;
 use App\Models\PromotionSeason;
+use App\Models\Setting;
+use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,11 @@ class CheckoutController extends Controller
 
         $delivery = Delivery::query()->latest()->first();
 
+        $savedAddress = Address::query()
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->first(['address', 'floor', 'qty_kilo']);
+
         return Inertia::render('User/Checkout/Index', [
             'cart' => $cart?->items->map(function ($item) {
                 return [
@@ -56,6 +63,55 @@ class CheckoutController extends Controller
                 'discount_type' => $delivery?->discount_type ?? null,
                 'discount_value' => (float) ($delivery?->discount_value ?? 0),
             ],
+            'savedAddress' => $savedAddress ? [
+                'address' => $savedAddress->address,
+                'floor' => $savedAddress->floor,
+                'qty_kilo' => (float) $savedAddress->qty_kilo,
+            ] : null,
+            'store' => [
+                'name' => Setting::get('store_name', config('app.name', 'CamboMart')),
+                'address' => Setting::get('address'),
+                'map_lat' => (float) Setting::get('map_lat', 11.5564),
+                'map_long' => (float) Setting::get('map_long', 104.9282),
+            ],
+        ]);
+    }
+
+    public function geocode(Request $request, GeocodingService $geocoding)
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'min:3', 'max:500'],
+        ]);
+
+        $result = $geocoding->geocode($validated['q']);
+
+        if ($result === null) {
+            return response()->json([
+                'message' => 'Address not found. Include street/area in Phnom Penh, or tap “Use my location”.',
+            ], 404);
+        }
+
+        return response()->json($result);
+    }
+
+    public function reverseGeocode(Request $request, GeocodingService $geocoding)
+    {
+        $validated = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+        ]);
+
+        $displayName = $geocoding->reverseGeocode(
+            (float) $validated['lat'],
+            (float) $validated['lng'],
+        );
+
+        if ($displayName === null) {
+            return response()->json(['message' => 'Reverse geocoding unavailable.'], 503);
+        }
+
+        return response()->json([
+            'display_name' => $displayName,
         ]);
     }
 

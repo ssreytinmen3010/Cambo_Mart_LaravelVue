@@ -63,9 +63,22 @@ const filteredProducts = computed(() => {
     return props.products.data;
 });
 
+function categoryBelongsToBrand(category, brandId) {
+    if (!brandId) return false;
+    const brandIds = Array.isArray(category.brand_ids)
+        ? category.brand_ids
+        : [];
+    if (brandIds.length > 0) {
+        return brandIds.some((id) => id == brandId);
+    }
+    return category.brand_id == brandId;
+}
+
 const filteredCategories = computed(() => {
     if (!form.brand_id) return [];
-    return props.categories.filter((c) => c.brand_id == form.brand_id);
+    return props.categories.filter((c) =>
+        categoryBelongsToBrand(c, form.brand_id),
+    );
 });
 
 // Watch brand change to filter categories
@@ -75,9 +88,10 @@ watch(
         if (!isEdit.value) {
             form.category_id = "";
         } else {
-            // Optional: Only clear if current category doesn't belong to the new brand
             const belongs = props.categories.find(
-                (c) => c.id == form.category_id && c.brand_id == newBrandId,
+                (c) =>
+                    c.id == form.category_id &&
+                    categoryBelongsToBrand(c, newBrandId),
             );
             if (!belongs) form.category_id = "";
         }

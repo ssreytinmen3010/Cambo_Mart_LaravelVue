@@ -122,7 +122,7 @@ const deliveryFeePerKg = computed(() => Number(page.props.delivery?.fee_amount_p
                         </div>
                         <div class="flex justify-between">
                             <span class="text-muted-foreground">Delivery</span>
-                            <span class="font-medium text-slate-700">${{ deliveryFeePerKg.toFixed(2) }} / 1 KG</span>
+                            <span class="font-medium text-slate-700">${{ deliveryFeePerKg.toFixed(2) }} / 1 KM</span>
                         </div>
                         <div class="border-t pt-3 flex justify-between">
                             <span class="font-semibold">Total</span>

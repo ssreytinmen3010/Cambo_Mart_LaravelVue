@@ -165,11 +165,11 @@ function linkActive(match) {
         <div class="container mx-auto px-4">
             <div class="flex items-center gap-4 h-18 py-3">
                 <Link :href="route('home')" class="flex items-center gap-2 group shrink-0">
-                    <div class="h-10 w-10 rounded-2xl bg-background border border-border/60 grid place-items-center shadow-glow group-hover:scale-105 transition-transform overflow-hidden">
+                    <div class="h-12 w-12 rounded-2xl bg-background  grid place-items-center  group-hover:scale-105 transition-transform overflow-hidden">
                         <img
                             :src="storeLogoUrl"
                             :alt="storeName"
-                            class="h-full w-full object-contain p-1"
+                            class="h-full w-full object-contain p-0"
                             loading="lazy"
                             @error="onLogoError"
                         />

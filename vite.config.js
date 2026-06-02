@@ -27,4 +27,13 @@ export default defineConfig({
             '@img': path.resolve(__dirname, 'resources/images'),
         },
     },
+    optimizeDeps: {
+        include: ['chart.js/auto', 'leaflet'],
+    },
+    server: {
+        host: '127.0.0.1',
+        hmr: {
+            host: '127.0.0.1',
+        },
+    },
 });

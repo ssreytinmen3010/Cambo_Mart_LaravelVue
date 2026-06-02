@@ -250,7 +250,7 @@ onUnmounted(() => {
                     </a>
                 </div>
 
-                <div class="flex gap-3 overflow-x-auto pb-2 pr-1">
+                <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pr-1">
                     <a
                         v-for="category in categories"
                         :key="category.id"
